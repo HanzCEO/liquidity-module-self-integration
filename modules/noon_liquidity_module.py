@@ -73,11 +73,10 @@ class NoonLiquidityModule(LiquidityModule):
 		pool_state: Dict,
 		underlying_amount:int,
 		underlying_token:Token, 
-		pool_tokens: Dict[Token.address, Token]
+		pool_tokens: Dict[str, Token]
     ) -> int:
         # 1 sUSN/USN price disrepancy between `days` compounded everyday for 365 days
         usn_address = underlying_token.address
-        asset_decimals = pool_tokens[usn_address].decimals
         days = pool_state.get('days', 0)
         # Previous state
         previous_total_assets = pool_state.get('prevTotalAssets', 0)
@@ -113,8 +112,8 @@ class NoonLiquidityModule(LiquidityModule):
             underlying_amount
         )
 
-        d_price = current_price - previous_price
-        daily_apy = d_price / days
+        d_price = previous_price - current_price # lower sUSN/USN price means profit
+        daily_apy = d_price / previous_price / days
 
         compounded_apy = (1 + daily_apy) ** 365 - 1
         apy_bps = compounded_apy * 10000
@@ -125,7 +124,7 @@ class NoonLiquidityModule(LiquidityModule):
         self, 
         pool_state: Dict,
         fixed_parameters: Dict,
-        pool_tokens: Dict[Token.address, Token]
+        pool_tokens: Dict[str, Token]
     ) -> int:
         # USN total supply
         # ethereum: {
@@ -141,11 +140,11 @@ class NoonLiquidityModule(LiquidityModule):
         #     susn: '0xB6a09d426861c63722Aa0b333a9cE5d5a9B04c4f',
         # }
 
-        usn_amount = pool_state.get('totalSupply', 0)
+        usn_amount = int(pool_state.get('totalSupply', 0))
         usn_address = fixed_parameters.get('usn_address')
         price = pool_tokens[usn_address].reference_price
 
         tvl = usn_amount * price
         tvl /= 10 ** pool_tokens[usn_address].decimals
 
-        return tvl
+        return int(tvl)
