@@ -17,13 +17,13 @@ class TokemakLiquidityModule(LiquidityModule):
         purpose: str
     ) -> int:
         asset_breakdown = pool_state.get('assetBreakdown', {})
+        idle_assets = asset_breakdown.get('totalIdle', 0)
         if purpose == 'global':
-            return asset_breakdown.get('totalDebt', 0)
+            return idle_assets + asset_breakdown.get('totalDebt', 0)
         elif purpose == 'deposit':
-            return asset_breakdown.get('totalDebtMax', 0)
+            return idle_assets + asset_breakdown.get('totalDebtMax', 0)
         elif purpose == 'withdraw':
-            return asset_breakdown.get('totalDebtMin', 0)
-        return 0
+            return idle_assets + asset_breakdown.get('totalDebtMin', 0)
 
     # https://docs.tokemak.xyz/developer-docs/integrating/4626-compliance
     def _convert_to_shares(
@@ -121,14 +121,16 @@ class TokemakLiquidityModule(LiquidityModule):
             "assetBreakdown": pool_state.get("previousAssetBreakdown", None),
             "totalSupply": pool_state.get("previousTotalSupply", 0)
         }
-        previous_price = self._convert_to_assets(previous_state, 1e18)
         
         # Current state
         aux_pool_state = deepcopy(pool_state)
         
         shares = self._convert_to_shares(aux_pool_state, underlying_amount)
+        aux_pool_state["assetBreakdown"]["totalDebtMin"]
         aux_pool_state["totalSupply"] += shares
-        
+
+        # Price calculation
+        previous_price = self._convert_to_assets(previous_state, 1e18)
         currentPrice = self._convert_to_assets(aux_pool_state, 1e18)
 
         # Validation
@@ -147,7 +149,7 @@ class TokemakLiquidityModule(LiquidityModule):
         fixed_parameters: Dict,
         pool_tokens: Dict[str, Token]
     ) -> int:
-        total_assets = self._get_assets(pool_state, 'global')
+        total_assets = int(self._get_assets(pool_state, 'global'))
         asset_address = fixed_parameters.get('asset')
         pool_token = pool_tokens.get(asset_address)
         
