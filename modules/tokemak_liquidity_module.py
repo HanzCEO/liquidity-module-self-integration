@@ -74,6 +74,7 @@ class TokemakLiquidityModule(LiquidityModule):
         
         return fee, output_amount
 
+    # TODO: https://basescan.deth.net/address/0xAADf01DD90aE0A6Bb9Eb908294658037096E0404
     def get_amount_in(
         self, 
         pool_state: Dict, 
@@ -112,5 +113,14 @@ class TokemakLiquidityModule(LiquidityModule):
         fixed_parameters: Dict,
         pool_tokens: Dict[str, Token]
     ) -> int:
-        # Implement TVL calculation logic
-        pass
+        total_assets = self._get_assets(pool_state, 'global')
+        asset_address = fixed_parameters.get('asset')
+        pool_token = pool_tokens.get(asset_address)
+        
+        if not pool_token:
+            return 0
+        
+        tvl = total_assets * pool_token.reference_price
+        tvl /= 10 ** pool_token.decimals
+
+        return int(tvl)
