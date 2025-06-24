@@ -15,6 +15,18 @@ class NoonLiquidityModule(LiquidityModule):
         offset = 10 ** decimal_offset
         
         return math.floor(assets * (total_supply + offset) / (total_assets + 1))
+    
+    def _convert_to_assets(
+        self,
+        pool_state: Dict,
+        shares: int
+    ) -> int:
+        total_supply = pool_state.get('totalSupply', 0)
+        total_assets = pool_state.get('totalAssets', 0)
+        decimal_offset = 0
+        offset = 10 ** decimal_offset
+        
+        return math.floor(shares * (total_assets + 1) / (total_supply + offset))
 
     def get_amount_out(
         self, 
@@ -24,8 +36,17 @@ class NoonLiquidityModule(LiquidityModule):
         output_token: Token,
         input_amount: int, 
     ) -> tuple[int | None, int | None]:
-        # Only staking is atomic
-        pass
+        usn_address = fixed_parameters.get('usn_address')
+        susn_address = fixed_parameters.get('susn_address')
+
+        if input_token.address != usn_address or output_token.address != susn_address:
+            return None, None
+        
+        output_amount = self._convert_to_shares(
+            pool_state,
+            input_amount
+        )
+        return output_amount, None
 
     def get_amount_in(
         self, 
@@ -35,8 +56,17 @@ class NoonLiquidityModule(LiquidityModule):
         output_token: Token,
         output_amount: int
     ) -> tuple[int | None, int | None]:
-        # Only staking is atomic
-        pass
+        usn_address = fixed_parameters.get('usn_address')
+        susn_address = fixed_parameters.get('susn_address')
+
+        if input_token.address != usn_address or output_token.address != susn_address:
+            return None, None
+        
+        input_amount = self._convert_to_assets(
+            pool_state,
+            output_amount
+        )
+        return input_amount, None
 
     def get_apy(
 		self, 
