@@ -5,7 +5,7 @@ from decimal import Decimal
 class MyProtocolLiquidityModule(LiquidityModule):
     def get_amount_out(
         self, 
-        pool_states: Dict, 
+        pool_state: Dict, 
         fixed_parameters: Dict,
         input_token: Token, 
         output_token: Token,
@@ -25,10 +25,21 @@ class MyProtocolLiquidityModule(LiquidityModule):
         # Only staking is atomic
         pass
 
-    def get_apy(self, pool_state: Dict) -> Decimal:
+    def get_apy(
+		self, 
+		pool_state: Dict, 
+		underlying_amount:int,
+		underlying_token:Token, 
+		pool_tokens: Dict[Token.address, Token]
+    ) -> int:
         # 1 USN/sUSN price disrepancy between `days` compounded everyday for 365 days
         pass
 
-    def get_tvl(self, pool_state: Dict, token: Optional[Token] = None) -> Decimal:
+    def get_tvl(
+        self, 
+        pool_state: Dict,
+        fixed_parameters: Dict,
+        pool_tokens: Dict[Token.address, Token]
+    ) -> int:
         # USN + sUSN in sUSN contract
         pass
