@@ -94,15 +94,15 @@ def test_get_apy_compound(noon_module, tokens):
 
 def test_get_apy_exact(noon_module, tokens):
     pool_state = {
-        "days": 1,
+        "days": 365,
         "prevTotalAssets": 1e18,
         "prevTotalSupply": 1e18,
         "totalAssets": 2e18,
         "totalSupply": 2e18,
     }
     apy = noon_module.get_apy(pool_state, 1e18, tokens["0xUSN"], tokens)
-    assert apy != 2**365 * 10000 - 1 # Must be dilluted
-    assert apy == 502902801166828306432
+    assert apy != 2 * 10000 - 1 # Must be dilluted
+    assert apy == int(((1 + 1/365) ** 365 - 1) * 10000)
 
 # --- get_tvl ---
 def test_get_tvl_general(noon_module, tokens, fixed_parameters):

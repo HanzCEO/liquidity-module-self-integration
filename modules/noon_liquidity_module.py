@@ -95,26 +95,25 @@ class NoonLiquidityModule(LiquidityModule):
             return 0
         
         # Dillute the current state
-        current_pool_state['totalAssets'] += underlying_amount
-        current_pool_state['totalSupply'] += self._convert_to_shares(
+        shares = self._convert_to_shares(
             current_pool_state,
             underlying_amount
         )
+        current_pool_state['totalAssets'] += underlying_amount
+        current_pool_state['totalSupply'] += shares
 
         # Calculate price disrepancy
-        previous_price = self._convert_to_shares(
+        previous_price = self._convert_to_assets(
             previous_pool_state,
-            underlying_amount
+            shares
         )
 
-        current_price = self._convert_to_shares(
+        current_price = self._convert_to_assets(
             current_pool_state,
-            underlying_amount
+            shares
         )
 
-        d_price = previous_price - current_price # lower sUSN/USN price means profit
-        daily_apy = d_price / previous_price / days
-
+        daily_apy = current_price / previous_price / days
         compounded_apy = (1 + daily_apy) ** 365 - 1
         apy_bps = compounded_apy * 10000
 
