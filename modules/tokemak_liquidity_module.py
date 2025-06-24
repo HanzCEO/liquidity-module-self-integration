@@ -2,7 +2,9 @@ from copy import deepcopy
 from templates.liquidity_module import LiquidityModule, Token
 from typing import Dict, Optional
 from decimal import Decimal
-import time, math
+import time
+import modules.helpers.autopool4626 as Autopool4626
+import modules.helpers.autopooldebt as AutopoolDebt
 
 class TokemakLiquidityModule(LiquidityModule):
     # https://docs.tokemak.xyz/developer-docs/integrating/checking-for-stale-data
@@ -10,46 +12,22 @@ class TokemakLiquidityModule(LiquidityModule):
         TIMEOUT = 60 * 60 * 24
         oldest_debt_reporting = pool_state.get("oldestDebtReporting", 0)
         return int(time.time()) - oldest_debt_reporting >= TIMEOUT
-    
-    def _get_assets(
+        
+    def _max_deposit(
         self,
         pool_state: Dict,
-        purpose: str
+        fixed_parameters: Dict
     ) -> int:
-        asset_breakdown = pool_state.get('assetBreakdown', {})
-        idle_assets = asset_breakdown.get('totalIdle', 0)
-        if purpose == 'global':
-            return idle_assets + asset_breakdown.get('totalDebt', 0)
-        elif purpose == 'deposit':
-            return idle_assets + asset_breakdown.get('totalDebtMax', 0)
-        elif purpose == 'withdraw':
-            return idle_assets + asset_breakdown.get('totalDebtMin', 0)
-
-    # https://docs.tokemak.xyz/developer-docs/integrating/4626-compliance
-    def _convert_to_shares(
-        self,
-        pool_state: Dict,
-        assets: int
-    ) -> int:
+        total_assets = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
         total_supply = pool_state.get('totalSupply', 0)
-        total_assets = self._get_assets(pool_state, 'deposit')
-        decimal_offset = 0
-        offset = 10 ** decimal_offset
 
-        return math.floor(assets * (total_supply + offset) / (total_assets + 1))
+        return Autopool4626.convert_to_assets(
+            Autopool4626.max_mint(pool_state, fixed_parameters),
+            total_assets,
+            total_supply,
+            is_up=True
+        )
 
-    def _convert_to_assets(
-        self,
-        pool_state: Dict,
-        shares: int
-    ) -> int:
-        total_supply = pool_state.get('totalSupply', 0)
-        total_assets = self._get_assets(pool_state, 'withdraw')
-        decimal_offset = 0
-        offset = 10 ** decimal_offset
-
-        return math.floor(shares * (total_assets + 1) / (total_supply + offset))
-    
     # TODO: https://docs.tokemak.xyz/developer-docs/integrating/large-withdrawals
     # https://docs.tokemak.xyz/developer-docs/contracts-overview/autopool-eth-contracts-overview/autopilot-contracts-and-systems/autopilot-router
     # https://docs.tokemak.xyz/developer-docs/contracts-overview/autopool-eth-contracts-overview/autopilot-contracts-and-systems/autopools
@@ -69,9 +47,9 @@ class TokemakLiquidityModule(LiquidityModule):
             return None, None
 
         if output_token.address == vault_token_address:
-            output_amount = self._convert_to_shares(pool_state, input_amount)
+            output_amount = Autopool4626.convert_to_shares(pool_state, input_amount)
         elif input_token.address == vault_token_address:
-            output_amount = self._convert_to_assets(pool_state, input_amount)
+            output_amount = Autopool4626.convert_to_assets(pool_state, input_amount)
         
         return fee, output_amount
 
@@ -92,9 +70,9 @@ class TokemakLiquidityModule(LiquidityModule):
             return None, None
 
         if output_token.address == vault_token_address:
-            input_amount = self._convert_to_assets(pool_state, output_amount)
+            input_amount = Autopool4626.convert_to_assets(pool_state, output_amount)
         elif input_token.address == vault_token_address:
-            input_amount = self._convert_to_shares(pool_state, output_amount)
+            input_amount = Autopool4626.convert_to_shares(pool_state, output_amount)
         
         return input_amount, fee
 
@@ -125,13 +103,13 @@ class TokemakLiquidityModule(LiquidityModule):
         # Current state
         aux_pool_state = deepcopy(pool_state)
         
-        shares = self._convert_to_shares(aux_pool_state, underlying_amount)
+        shares = Autopool4626.convert_to_shares(aux_pool_state, underlying_amount)
         aux_pool_state["assetBreakdown"]["totalDebtMin"]
         aux_pool_state["totalSupply"] += shares
 
         # Price calculation
-        previous_price = self._convert_to_assets(previous_state, 1e18)
-        currentPrice = self._convert_to_assets(aux_pool_state, 1e18)
+        previous_price = Autopool4626.convert_to_assets(previous_state, 1e18)
+        currentPrice = Autopool4626.convert_to_assets(aux_pool_state, 1e18)
 
         # Validation
         if days == 0 or previous_price == 0:
@@ -149,7 +127,7 @@ class TokemakLiquidityModule(LiquidityModule):
         fixed_parameters: Dict,
         pool_tokens: Dict[str, Token]
     ) -> int:
-        total_assets = int(self._get_assets(pool_state, 'global'))
+        total_assets = int(Autopool4626.get_assets(pool_state, 'global'))
         asset_address = fixed_parameters.get('asset')
         pool_token = pool_tokens.get(asset_address)
         
