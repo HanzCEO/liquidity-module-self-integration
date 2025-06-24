@@ -11,7 +11,7 @@ class MyProtocolLiquidityModule(LiquidityModule):
         output_token: Token,
         input_amount: int, 
     ) -> tuple[int | None, int | None]:
-        # Implement logic to calculate output amount given input amount
+        # Only staking is atomic
         pass
 
     def get_amount_in(
@@ -22,13 +22,13 @@ class MyProtocolLiquidityModule(LiquidityModule):
         output_token: Token,
         output_amount: int
     ) -> tuple[int | None, int | None]:
-        # Implement logic to calculate required input amount given output amount
+        # Only staking is atomic
         pass
 
     def get_apy(self, pool_state: Dict) -> Decimal:
-        # Implement APY calculation logic
+        # 1 USN/sUSN price disrepancy between `days` compounded everyday for 365 days
         pass
 
     def get_tvl(self, pool_state: Dict, token: Optional[Token] = None) -> Decimal:
-        # Implement TVL calculation logic
+        # USN + sUSN in sUSN contract
         pass
