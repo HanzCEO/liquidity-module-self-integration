@@ -1,3 +1,4 @@
+from copy import deepcopy
 from templates.liquidity_module import LiquidityModule, Token
 from typing import Dict, Optional
 from decimal import Decimal
@@ -104,8 +105,41 @@ class TokemakLiquidityModule(LiquidityModule):
         underlying_token:Token, 
         pool_tokens: Dict[str, Token]
     ) -> int:
-        # Implement APY calculation logic
-        pass
+        # Quoting from the FAQ:
+        # "Autopool LPs earn rewards as the value of the Autopool increases, meaning the value of their share of the underlying pool increases."
+        #
+        # There's actualy one more product that Tokemak offers, which is the "sTOKE" staking program. But they require special timing for withdrawals
+
+        if self._is_stale(pool_state):
+            return None, None
+
+        # Days between states
+        days = pool_state.get("days", 0)
+
+        # Previous state        
+        previous_state = {
+            "assetBreakdown": pool_state.get("previousAssetBreakdown", None),
+            "totalSupply": pool_state.get("previousTotalSupply", 0)
+        }
+        previous_price = self._convert_to_assets(previous_state, 1e18)
+        
+        # Current state
+        aux_pool_state = deepcopy(pool_state)
+        
+        shares = self._convert_to_shares(aux_pool_state, underlying_amount)
+        aux_pool_state["totalSupply"] += shares
+        
+        currentPrice = self._convert_to_assets(aux_pool_state, 1e18)
+
+        # Validation
+        if days == 0 or previous_price == 0:
+            return 0
+        
+        daily_apy = (currentPrice / previous_price) / days
+        compounded_apy = (1 + daily_apy) ** 365 - 1
+        apy = compounded_apy * 10000
+
+        return int(apy)
 
     def get_tvl(
         self, 
