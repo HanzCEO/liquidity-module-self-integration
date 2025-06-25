@@ -1,5 +1,6 @@
-import time
 from typing import Dict
+
+from modules.helpers import block
 
 
 def unlocked_shares(
@@ -11,7 +12,7 @@ def unlocked_shares(
     profit_unlock_rate =  profit_unlock_settings.get('profitUnlockRate', 0)
     last_profit_unlock_time =  profit_unlock_settings.get('lastProfitUnlockTime', 0)
     self_balance = pool_state.get('selfBalance', 0) # this.balanceOf(address(this))
-    timestamp = int(time.time())
+    timestamp = block.timestamp
 
     if full_time > timestamp:
         return profit_unlock_rate * (timestamp - last_profit_unlock_time) / MAX_BPS_PROFIT

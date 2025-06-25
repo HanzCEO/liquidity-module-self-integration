@@ -20,14 +20,18 @@ def get_assets(
 # https://docs.tokemak.xyz/developer-docs/integrating/4626-compliance
 def convert_to_shares(
     pool_state: Dict,
-    assets: int
+    assets: int,
+    is_up: bool = False
 ) -> int:
     total_supply = pool_state.get('totalSupply', 0)
     total_assets = get_assets(pool_state, 'deposit')
     decimal_offset = 0
     offset = 10 ** decimal_offset
 
-    return math.floor(assets * (total_supply + offset) / (total_assets + 1))
+    if is_up:
+        return math.ceil(assets * (total_supply + offset) / (total_assets + 1))
+    else:
+        return math.floor(assets * (total_supply + offset) / (total_assets + 1))
 
 def convert_to_assets(
     pool_state: Dict,
@@ -64,7 +68,7 @@ def max_mint(
         return 0
     
     # TODO
-    ta = AutopoolDebt._total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
+    ta = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
     if ta == 0:
         return 0
     
