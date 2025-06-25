@@ -71,6 +71,7 @@ class TokemakLiquidityModule(LiquidityModule):
         elif input_token.address == vault_token_address:
             # Withdrawal mechanism
             output_amount = Autopool4626.convert_to_assets(pool_state, input_amount)
+            # Withdrawal mechanism does not need a check for max withdrawal amount
         
         return fee, output_amount
 
@@ -93,6 +94,7 @@ class TokemakLiquidityModule(LiquidityModule):
         if output_token.address == vault_token_address:
             # Withdrawal mechanism
             input_amount = Autopool4626.convert_to_assets(pool_state, output_amount)
+            # Withdrawal mechanism does not need a check for max withdrawal amount
         elif input_token.address == vault_token_address:
             # Deposit mechanism
             input_amount = Autopool4626.convert_to_shares(pool_state, output_amount)
@@ -101,7 +103,7 @@ class TokemakLiquidityModule(LiquidityModule):
             if input_amount > max_deposit_amount:
                 raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")
         
-        return input_amount, fee
+        return fee, input_amount
 
     def get_apy(
         self, 
@@ -131,7 +133,7 @@ class TokemakLiquidityModule(LiquidityModule):
         aux_pool_state = deepcopy(pool_state)
         
         shares = Autopool4626.convert_to_shares(aux_pool_state, underlying_amount)
-        aux_pool_state["assetBreakdown"]["totalDebtMin"]
+        aux_pool_state["assetBreakdown"]["totalIdle"] += underlying_amount
         aux_pool_state["totalSupply"] += shares
 
         # Price calculation

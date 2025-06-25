@@ -106,7 +106,7 @@ def test_get_amount_in_general(tokemak_module, tokens, fixed_parameters):
         "oldestDebtReporting": int(time.time())
     }
     output_amount = 100
-    inp, fee = tokemak_module.get_amount_in(
+    fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xASSET"], tokens["0xVAULT"], output_amount
     )
     assert isinstance(inp, int)
@@ -126,7 +126,7 @@ def test_get_amount_in_exact(tokemak_module, tokens, fixed_parameters):
     output_amount = 100
     # input = floor(100 * (2000+1)/(1000+1))
     expected = (100*2001)//1001
-    inp, fee = tokemak_module.get_amount_in(
+    fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xASSET"], tokens["0xVAULT"], output_amount
     )
     assert inp == expected
@@ -143,7 +143,7 @@ def test_get_amount_in_stale(tokemak_module, tokens, fixed_parameters):
         },
         "oldestDebtReporting": int(time.time()) - 60*60*24 - 1
     }
-    inp, fee = tokemak_module.get_amount_in(
+    fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xASSET"], tokens["0xVAULT"], 100
     )
     assert inp is None and fee is None
@@ -162,7 +162,7 @@ def test_get_amount_in_vault_to_asset(tokemak_module, tokens, fixed_parameters):
     output_amount = 100
     # input = floor(100 * (1000+1)/(2000+1))
     expected = (100*1001)//2001
-    inp, fee = tokemak_module.get_amount_in(
+    fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xVAULT"], tokens["0xASSET"], output_amount
     )
     assert inp == expected
@@ -309,7 +309,7 @@ def test_get_amount_in_stale(tokemak_module, tokens, fixed_parameters):
         },
         "oldestDebtReporting": int(time.time()) - 60*60*24 - 1
     }
-    inp, fee = tokemak_module.get_amount_in(
+    fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xASSET"], tokens["0xVAULT"], 100
     )
     assert inp is None and fee is None
