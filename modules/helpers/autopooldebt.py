@@ -10,7 +10,7 @@ def total_assets_time_checked(
     purpose: str
 ) -> int:
     debt_report_queue = pool_state.get('debtReportQueue', [])
-    destination_info = fixed_parameters.get('destinationInfo', {})
+    destination_info = pool_state.get('destinationInfo', {})
     recalculated_total_assets = 0
 
     for dest_vault in debt_report_queue:
