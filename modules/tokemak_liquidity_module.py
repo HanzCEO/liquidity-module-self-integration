@@ -132,6 +132,7 @@ class TokemakLiquidityModule(LiquidityModule):
         # Current state
         aux_pool_state = deepcopy(pool_state)
         
+        # Dillute
         shares = Autopool4626.convert_to_shares(aux_pool_state, underlying_amount)
         aux_pool_state["assetBreakdown"]["totalIdle"] += underlying_amount
         aux_pool_state["totalSupply"] += shares

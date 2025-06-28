@@ -318,17 +318,18 @@ for dest in destinations:
 		batch.add(destContract.functions.ONE())
 
 		res1, currentShares, underlyerCeilingPrice, underlyerFloorPrice, ONE = batch.execute()
-		destination_info[dest] = {}
+		destl = dest.lower()
+		destination_info[destl] = {}
 		(_, min_, max_, last, owned) = res1
-		destination_info[dest]["lastReport"] = last
-		destination_info[dest]["ownerShares"] = owned
-		destination_info[dest]["cachedMaxDebtValue"] = max_
-		destination_info[dest]["cachedMinDebtValue"] = min_
+		destination_info[destl]["lastReport"] = last
+		destination_info[destl]["ownerShares"] = owned
+		destination_info[destl]["cachedMaxDebtValue"] = max_
+		destination_info[destl]["cachedMinDebtValue"] = min_
 
-		destination_info[dest]["currentShares"] = currentShares
-		destination_info[dest]["underlyerCeilingPrice"] = underlyerCeilingPrice
-		destination_info[dest]["underlyerFloorPrice"] = underlyerFloorPrice
-		destination_info[dest]["ONE"] = ONE
+		destination_info[destl]["currentShares"] = currentShares
+		destination_info[destl]["underlyerCeilingPrice"] = underlyerCeilingPrice
+		destination_info[destl]["underlyerFloorPrice"] = underlyerFloorPrice
+		destination_info[destl]["ONE"] = ONE
 
 pool_state = {
 	"oldestDebtReporting": oldest_debt_reporting,
@@ -344,9 +345,8 @@ pool_state = {
 	"paused": paused,
 	"shutdown": shutdown,
 	"profitUnlockSettings": profit_unlock_settings,
-	"debtReportQueue": debt_report_queue,
+	"debtReportQueue": [debt_report_queue[i].lower() for i in range(len(debt_report_queue))],
 	"destinationInfo": destination_info,
-	"destinations": destinations
 }
 
 fixed_parameters = {

@@ -11,7 +11,12 @@ def total_assets_time_checked(
 ) -> int:
     debt_report_queue = pool_state.get('debtReportQueue', [])
     destination_info = pool_state.get('destinationInfo', {})
+    assets = pool_state.get('assetBreakdown', {})
     recalculated_total_assets = 0
+    if purpose == 'deposit':
+        recalculated_total_assets = assets.get('totalIdle', 0) + assets.get('totalDebtMax', 0)
+    elif purpose == 'withdraw':
+        recalculated_total_assets = assets.get('totalIdle', 0) + assets.get('totalDebtMin', 0)
 
     for dest_vault in debt_report_queue:
         last_report = destination_info[dest_vault].get('lastReport', 0)
@@ -43,5 +48,6 @@ def total_assets_time_checked(
         
         recalculated_total_assets += new_value
         recalculated_total_assets -= stale_debt
+        raise Exception(f"Recalculated total assets: {recalculated_total_assets}, stale debt: {stale_debt}, extreme price: {extreme_price}")
 
     return recalculated_total_assets
