@@ -69,7 +69,6 @@ def max_mint(
     if ts > MAX_UINT112:
         return 0
     
-    # TODO
     ta = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
     if ta == 0:
         return 0
