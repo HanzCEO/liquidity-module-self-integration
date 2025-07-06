@@ -25,13 +25,14 @@ def convert_to_shares(
 ) -> int:
     total_supply = pool_state.get('totalSupply', 0)
     total_assets = get_assets(pool_state, 'deposit')
-    decimal_offset = 0
-    offset = 10 ** decimal_offset
+
+    if total_assets == 0 or total_supply == 0:
+        return assets
 
     if is_up:
-        return math.ceil(assets * (total_supply + offset) / (total_assets + 1))
+        return math.ceil(assets * total_supply / total_assets)
     else:
-        return math.floor(assets * (total_supply + offset) / (total_assets + 1))
+        return math.floor(assets * total_supply / total_assets)
 
 def convert_to_assets(
     pool_state: Dict,
@@ -40,13 +41,14 @@ def convert_to_assets(
 ) -> int:
     total_supply = pool_state.get('totalSupply', 0)
     total_assets = get_assets(pool_state, 'withdraw')
-    decimal_offset = 0
-    offset = 10 ** decimal_offset
+
+    if total_supply == 0:
+        return shares
 
     if is_up:
-        return math.ceil(shares * (total_assets + 1) / (total_supply + offset))
+        return math.ceil(shares * total_assets / total_supply)
     else:
-        return math.floor(shares * (total_assets + 1) / (total_supply + offset))
+        return math.floor(shares * total_assets / total_supply)
     
 def max_mint(
     pool_state: Dict,
