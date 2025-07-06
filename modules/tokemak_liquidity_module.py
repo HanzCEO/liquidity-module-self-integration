@@ -43,7 +43,7 @@ class TokemakLiquidityModule(LiquidityModule):
             is_up=True
         )
 
-    # TODO: https://docs.tokemak.xyz/developer-docs/integrating/large-withdrawals
+    # NOTE: https://docs.tokemak.xyz/developer-docs/integrating/large-withdrawals
     # https://docs.tokemak.xyz/developer-docs/contracts-overview/autopool-eth-contracts-overview/autopilot-contracts-and-systems/autopilot-router
     # https://docs.tokemak.xyz/developer-docs/contracts-overview/autopool-eth-contracts-overview/autopilot-contracts-and-systems/autopools
     def get_amount_out(
@@ -69,13 +69,13 @@ class TokemakLiquidityModule(LiquidityModule):
             
             output_amount = Autopool4626.convert_to_shares(pool_state, input_amount)
         elif input_token.address == vault_token_address:
-            # Withdrawal mechanism
+            # Redeem mechanism
             output_amount = Autopool4626.convert_to_assets(pool_state, input_amount)
-            # Withdrawal mechanism does not need a check for max withdrawal amount
+            # Redeem mechanism does not need a check for max shares amount.
         
         return fee, output_amount
 
-    # TODO: https://basescan.deth.net/address/0xAADf01DD90aE0A6Bb9Eb908294658037096E0404
+    # NOTE: https://basescan.deth.net/address/0xAADf01DD90aE0A6Bb9Eb908294658037096E0404
     def get_amount_in(
         self, 
         pool_state: Dict, 
@@ -92,9 +92,9 @@ class TokemakLiquidityModule(LiquidityModule):
             return None, None
 
         if output_token.address == vault_token_address:
-            # Withdrawal mechanism
+            # Redeem mechanism
             input_amount = Autopool4626.convert_to_assets(pool_state, output_amount)
-            # Withdrawal mechanism does not need a check for max withdrawal amount
+            # Redeem mechanism does not need a check for max shares amount
         elif input_token.address == vault_token_address:
             # Deposit mechanism
             input_amount = Autopool4626.convert_to_shares(pool_state, output_amount)
