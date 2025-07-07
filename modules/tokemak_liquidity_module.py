@@ -54,7 +54,8 @@ class TokemakLiquidityModule(LiquidityModule):
             output_amount = Autopool4626.convert_to_shares(pool_state, input_amount, total_assets_for_purpose=total_asset_for_deposit)
         elif input_token.address == vault_token_address:
             # Redeem mechanism
-            output_amount = Autopool4626.convert_to_assets(pool_state, input_amount)
+            total_asset_for_redeem = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'withdraw')
+            output_amount = Autopool4626.convert_to_assets(pool_state, input_amount, total_assets_for_purpose=total_asset_for_redeem)
             # Redeem mechanism does not need a check for max shares amount.
         
         return fee, output_amount
@@ -76,17 +77,18 @@ class TokemakLiquidityModule(LiquidityModule):
             return None, None
 
         if output_token.address == vault_token_address:
-            # Redeem mechanism
-            input_amount = Autopool4626.convert_to_assets(pool_state, output_amount)
-            # Redeem mechanism does not need a check for max shares amount
-        elif input_token.address == vault_token_address:
             # Deposit mechanism
             total_asset_for_deposit = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
-            input_amount = Autopool4626.convert_to_shares(pool_state, output_amount, total_assets_for_purpose=total_asset_for_deposit)
+            input_amount = Autopool4626.convert_to_shares(pool_state, output_amount, total_assets_for_purpose=total_asset_for_deposit, is_up=True)
 
             max_deposit_amount = self._max_deposit(pool_state, fixed_parameters)
             if input_amount > max_deposit_amount:
-                raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")            
+                raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")
+        elif input_token.address == vault_token_address:
+            # Redeem mechanism
+            total_asset_for_redeem = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'withdraw')
+            input_amount = Autopool4626.convert_to_assets(pool_state, output_amount, total_assets_for_purpose=total_asset_for_redeem)
+            # Redeem mechanism does not need a check for max shares amount
         
         return fee, input_amount
 
@@ -123,6 +125,7 @@ class TokemakLiquidityModule(LiquidityModule):
         aux_pool_state["totalSupply"] += shares
 
         # Price calculation
+        # TODO: Fix these pricings by using total_assets_for_purpose == 'deposit'
         previous_price = Autopool4626.convert_to_assets(previous_state, 1e18)
         currentPrice = Autopool4626.convert_to_assets(aux_pool_state, 1e18)
 

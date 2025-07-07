@@ -342,6 +342,7 @@ pool_state = {
 	},
 	"previousAssetBreakdown": previous_asset_breakdown,
 	"previousTotalSupply": previous_total_supply,
+	"days": 30, # simulation
 	"paused": paused,
 	"shutdown": shutdown,
 	"profitUnlockSettings": profit_unlock_settings,
