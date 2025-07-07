@@ -21,10 +21,16 @@ def get_assets(
 def convert_to_shares(
     pool_state: Dict,
     assets: int,
+    total_assets_for_purpose: int = -1,
     is_up: bool = False
 ) -> int:
     total_supply = pool_state.get('totalSupply', 0)
-    total_assets = get_assets(pool_state, 'deposit')
+    total_assets = 0
+
+    if total_assets_for_purpose != -1:
+        total_assets = total_assets_for_purpose
+    else:
+        total_assets = get_assets(pool_state, 'global')
 
     if total_assets == 0 or total_supply == 0:
         return assets
@@ -37,10 +43,16 @@ def convert_to_shares(
 def convert_to_assets(
     pool_state: Dict,
     shares: int,
+    total_assets_for_purpose: int = -1,
     is_up: bool = False
 ) -> int:
     total_supply = pool_state.get('totalSupply', 0)
-    total_assets = get_assets(pool_state, 'withdraw')
+    total_assets = 0
+
+    if total_assets_for_purpose != -1:
+        total_assets = total_assets_for_purpose
+    else:
+        total_assets = get_assets(pool_state, 'global')
 
     if total_supply == 0:
         return shares

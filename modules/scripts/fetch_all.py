@@ -322,7 +322,7 @@ for dest in destinations:
 		destination_info[destl] = {}
 		(_, min_, max_, last, owned) = res1
 		destination_info[destl]["lastReport"] = last
-		destination_info[destl]["ownerShares"] = owned
+		destination_info[destl]["ownedShares"] = owned
 		destination_info[destl]["cachedMaxDebtValue"] = max_
 		destination_info[destl]["cachedMinDebtValue"] = min_
 

@@ -12,34 +12,17 @@ class TokemakLiquidityModule(LiquidityModule):
         oldest_debt_reporting = pool_state.get("oldestDebtReporting", 0)
         return block.timestamp - oldest_debt_reporting >= TIMEOUT
     
-    def _convert_to_assets(
-        self,
-        shares: int,
-        total_assets: int,
-        total_supply: int,
-        is_up: bool = False
-    ) -> int:
-        return Autopool4626.convert_to_assets(
-            {
-                'totalSupply': total_supply,
-                'assetBreakdown': {'totalDebtMin': total_assets}
-            },
-            shares,
-            is_up
-        )
-
     def _max_deposit(
         self,
         pool_state: Dict,
         fixed_parameters: Dict
     ) -> int:
         total_assets = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
-        total_supply = pool_state.get('totalSupply', 0)
 
-        return self._convert_to_assets(
+        return Autopool4626.convert_to_assets(
+            pool_state,
             Autopool4626.max_mint(pool_state, fixed_parameters),
-            total_assets,
-            total_supply,
+            total_assets_for_purpose=total_assets,
             is_up=True
         )
 
@@ -64,10 +47,11 @@ class TokemakLiquidityModule(LiquidityModule):
         if output_token.address == vault_token_address:
             # Deposit mechanism
             max_deposit_amount = self._max_deposit(pool_state, fixed_parameters)
+            total_asset_for_deposit = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
             if input_amount > max_deposit_amount:
                 raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")
             
-            output_amount = Autopool4626.convert_to_shares(pool_state, input_amount)
+            output_amount = Autopool4626.convert_to_shares(pool_state, input_amount, total_assets_for_purpose=total_asset_for_deposit)
         elif input_token.address == vault_token_address:
             # Redeem mechanism
             output_amount = Autopool4626.convert_to_assets(pool_state, input_amount)
@@ -97,11 +81,12 @@ class TokemakLiquidityModule(LiquidityModule):
             # Redeem mechanism does not need a check for max shares amount
         elif input_token.address == vault_token_address:
             # Deposit mechanism
-            input_amount = Autopool4626.convert_to_shares(pool_state, output_amount)
+            total_asset_for_deposit = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
+            input_amount = Autopool4626.convert_to_shares(pool_state, output_amount, total_assets_for_purpose=total_asset_for_deposit)
 
             max_deposit_amount = self._max_deposit(pool_state, fixed_parameters)
             if input_amount > max_deposit_amount:
-                raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")
+                raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")            
         
         return fee, input_amount
 

@@ -48,6 +48,6 @@ def total_assets_time_checked(
         
         recalculated_total_assets += new_value
         recalculated_total_assets -= stale_debt
-        raise Exception(f"Recalculated total assets: {recalculated_total_assets}, stale debt: {stale_debt}, extreme price: {extreme_price}")
+        # raise Exception(f"Recalculated total assets: {recalculated_total_assets}, stale debt: {stale_debt}, extreme price: {extreme_price}")
 
     return recalculated_total_assets
