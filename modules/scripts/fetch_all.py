@@ -164,6 +164,19 @@ generalAbi = [
 	},
 	{
 		"inputs": [],
+		"name": "getWithdrawalQueue",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "getProfitUnlockSettings",
 		"outputs": [
 			{
@@ -307,6 +320,7 @@ debt_report_queue = pool.functions.getDebtReportingQueue().call()
 
 destination_info = {}
 destinations = pool.functions.getDestinations().call()
+withdrawalQueue = pool.functions.getWithdrawalQueue().call()
 for dest in destinations:
 	destContract = w3.eth.contract(address=dest, abi=generalAbi)
 	
@@ -342,12 +356,13 @@ pool_state = {
 	},
 	"previousAssetBreakdown": previous_asset_breakdown,
 	"previousTotalSupply": previous_total_supply,
-	"days": 30, # simulation
+	"days": days, # simulation
 	"paused": paused,
 	"shutdown": shutdown,
 	"profitUnlockSettings": profit_unlock_settings,
 	"debtReportQueue": [debt_report_queue[i].lower() for i in range(len(debt_report_queue))],
 	"destinationInfo": destination_info,
+	"withdrawalQueue": withdrawalQueue
 }
 
 fixed_parameters = {

@@ -11,20 +11,6 @@ class TokemakLiquidityModule(LiquidityModule):
         TIMEOUT = 60 * 60 * 24
         oldest_debt_reporting = pool_state.get("oldestDebtReporting", 0)
         return block.timestamp - oldest_debt_reporting >= TIMEOUT
-    
-    def _max_deposit(
-        self,
-        pool_state: Dict,
-        fixed_parameters: Dict
-    ) -> int:
-        total_assets = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
-
-        return Autopool4626.convert_to_assets(
-            pool_state,
-            Autopool4626.max_mint(pool_state, fixed_parameters),
-            total_assets_for_purpose=total_assets,
-            is_up=True
-        )
 
     # NOTE: https://docs.tokemak.xyz/developer-docs/integrating/large-withdrawals
     # https://docs.tokemak.xyz/developer-docs/contracts-overview/autopool-eth-contracts-overview/autopilot-contracts-and-systems/autopilot-router
@@ -46,7 +32,7 @@ class TokemakLiquidityModule(LiquidityModule):
 
         if output_token.address == vault_token_address:
             # Deposit mechanism
-            max_deposit_amount = self._max_deposit(pool_state, fixed_parameters)
+            max_deposit_amount = Autopool4626.max_deposit(pool_state, fixed_parameters)
             total_asset_for_deposit = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
             if input_amount > max_deposit_amount:
                 raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")
@@ -81,7 +67,7 @@ class TokemakLiquidityModule(LiquidityModule):
             total_asset_for_deposit = AutopoolDebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
             input_amount = Autopool4626.convert_to_shares(pool_state, output_amount, total_assets_for_purpose=total_asset_for_deposit, is_up=True)
 
-            max_deposit_amount = self._max_deposit(pool_state, fixed_parameters)
+            max_deposit_amount = Autopool4626.max_deposit(pool_state, fixed_parameters)
             if input_amount > max_deposit_amount:
                 raise Exception(f"Input amount {input_amount} exceeds max deposit amount {max_deposit_amount}")
         elif input_token.address == vault_token_address:
