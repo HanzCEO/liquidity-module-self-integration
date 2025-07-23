@@ -320,7 +320,7 @@ debt_report_queue = pool.functions.getDebtReportingQueue().call()
 
 destination_info = {}
 destinations = pool.functions.getDestinations().call()
-withdrawalQueue = pool.functions.getWithdrawalQueue().call()
+withdrawal_queue = pool.functions.getWithdrawalQueue().call()
 for dest in destinations:
 	destContract = w3.eth.contract(address=dest, abi=generalAbi)
 	
@@ -345,6 +345,16 @@ for dest in destinations:
 		destination_info[destl]["underlyerFloorPrice"] = underlyerFloorPrice
 		destination_info[destl]["ONE"] = ONE
 
+withdrawal_info = {}
+# for wid in withdrawal_queue:
+# 	withContract = w3.eth.contract(address=wid, abi=generalAbi)
+
+# 	with w3.batch_requests() as batch:
+# 		batch.add()
+
+# 		res = batch.execute()
+# 		withdrawal_info[wid.lower()] = {}
+
 pool_state = {
 	"oldestDebtReporting": oldest_debt_reporting,
 	"totalSupply": total_supply,
@@ -362,7 +372,8 @@ pool_state = {
 	"profitUnlockSettings": profit_unlock_settings,
 	"debtReportQueue": [debt_report_queue[i].lower() for i in range(len(debt_report_queue))],
 	"destinationInfo": destination_info,
-	"withdrawalQueue": withdrawalQueue
+	"withdrawalQueue": [withdrawal_queue[i].lower() for i in range(len(withdrawal_queue))],
+	"withdrawalInfo": withdrawal_info
 }
 
 fixed_parameters = {

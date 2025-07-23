@@ -1,7 +1,6 @@
 import math
 from typing import Dict
 from modules.helpers import block
-import modules.helpers.autopool4626 as Autopool4626
 
 MAX_DEBT_REPORT_AGE_SECONDS = 60 * 60 * 24 # 1 days
 def total_assets_time_checked(

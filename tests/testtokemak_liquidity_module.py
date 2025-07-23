@@ -21,7 +21,7 @@ def fixed_parameters(tokens):
     return {"asset": tokens["0xASSET"].address, "vaultTokenAddress": tokens["0xVAULT"].address}
 
 timestamp = int(time.time())
-pool_state = {'oldestDebtReporting': timestamp, 'totalSupply': 449816625736685889164, 'assetBreakdown': {'totalIdle': 1918308286390204243, 'totalDebt': 456964936201449676512, 'totalDebtMin': 456945514228028095775, 'totalDebtMax': 456984358174871257248}, 'previousAssetBreakdown': {'totalIdle': 1.5346466291121633e+18, 'totalDebt': 3.655719489611598e+20, 'totalDebtMin': 3.655564113824225e+20, 'totalDebtMax': 3.6558748653989704e+20}, 'previousTotalSupply': 3.598533005893488e+20, "days": 30, 'paused': False, 'shutdown': False, 'profitUnlockSettings': {'unlockPeriodInSeconds': 86400, 'fullProfitUnlockTime': 1751989944, 'lastProfitUnlockTime': timestamp, 'profitUnlockRate': 530737415791011224865}, 'debtReportQueue': ['0xe4433d00cf48bfe0c672d9949f2cd2c008bffc04', '0xc4eb861e7b66f593482a3d7e8adc314f6eeda30b'], 'destinationInfo': {'0xc4eb861e7b66f593482a3d7e8adc314f6eeda30b': {'lastReport': timestamp, 'ownedShares': 380909439870609905721, 'cachedMaxDebtValue': 381960591961836166493, 'cachedMinDebtValue': 381922291226184886655, 'currentShares': 380909439870609905721, 'underlyerCeilingPrice': 1003741888949197698, 'underlyerFloorPrice': 1002043822796719867, 'ONE': 1000000000000000000}, '0xe4433d00cf48bfe0c672d9949f2cd2c008bffc04': {'lastReport': timestamp, 'ownedShares': 73621287226229322848, 'cachedMaxDebtValue': 75023766213035090761, 'cachedMinDebtValue': 75023223001843209127, 'currentShares': 73621287226229322848, 'underlyerCeilingPrice': 1019900696918351253, 'underlyerFloorPrice': 1018501066054833421, 'ONE': 1000000000000000000}, '0xba1462f43c6f60ebd1c62735c94e428ad073e01a': {'lastReport': timestamp, 'ownedShares': 0, 'cachedMaxDebtValue': 0, 'cachedMinDebtValue': 0, 'currentShares': 0, 'underlyerCeilingPrice': 1002131742056761593, 'underlyerFloorPrice': 1000436399847529198, 'ONE': 1000000000000000000}}}
+pool_state = {'oldestDebtReporting': 1753279643, 'totalSupply': 12097636560995038075600, 'assetBreakdown': {'totalIdle': 1652493105064192344, 'totalDebt': 12633930090626855524705, 'totalDebtMin': 12633261988560572550038, 'totalDebtMax': 12634598192693138499366}, 'previousAssetBreakdown': {'totalIdle': 1.3219944840513539e+18, 'totalDebt': 1.0107144072501484e+22, 'totalDebtMin': 1.0106609590848459e+22, 'totalDebtMax': 1.010767855415451e+22}, 'previousTotalSupply': 9.67810924879603e+21, 'days': 5, 'paused': False, 'shutdown': False, 'profitUnlockSettings': {'unlockPeriodInSeconds': 86400, 'fullProfitUnlockTime': 1753211087, 'lastProfitUnlockTime': 1753193243, 'profitUnlockRate': 0}, 'debtReportQueue': ['0x4142e3a17391676c66ddf1285e43889f168ee237', '0x5c6aeb9ef0d5bba4e6691f381003503fd0d45126', '0x3f55eedde51504e6ed0ec30e8289b4da11edb7f9', '0xba1462f43c6f60ebd1c62735c94e428ad073e01a', '0xe4433d00cf48bfe0c672d9949f2cd2c008bffc04', '0x87e25ffe5c3a2720cd43f5eb8ec41ac0ce699d07', '0x2c7120dccf1c14a37a26a4955475d45d34a3d7e7', '0x40219bbda953ca811d2d0168dc806a96b84791d9', '0x43d99d04985ef2231f7d9b5d9111d2189d9fd971', '0x2e0e2ab6505a1182367dfb1e3c66648bf3eea020', '0x1ea622fa030e4a78f4cc2f305dd3c08da3f08573', '0xc4eb861e7b66f593482a3d7e8adc314f6eeda30b'], 'destinationInfo': {'0xc4eb861e7b66f593482a3d7e8adc314f6eeda30b': {'lastReport': 1753283051, 'ownedShares': 246652204388403049580, 'cachedMaxDebtValue': 247054943475103104092, 'cachedMinDebtValue': 246941427841461743502, 'currentShares': 246652204388403049580, 'underlyerCeilingPrice': 1004034438255158196, 'underlyerFloorPrice': 1000103304120083962, 'ONE': 1000000000000000000}, '0x1ea622fa030e4a78f4cc2f305dd3c08da3f08573': {'lastReport': 1753283051, 'ownedShares': 847482750577982637014, 'cachedMaxDebtValue': 883922561135862358313, 'cachedMinDebtValue': 883358708448783427003, 'currentShares': 847482750577982637014, 'underlyerCeilingPrice': 1052539238817096423, 'underlyerFloorPrice': 991087225568835223, 'ONE': 1000000000000000000}, '0x2e0e2ab6505a1182367dfb1e3c66648bf3eea020': {'lastReport': 1753279643, 'ownedShares': 147620009692798370400, 'cachedMaxDebtValue': 150192257530904527365, 'cachedMinDebtValue': 150189058270356713019, 'currentShares': 147620009692798370400, 'underlyerCeilingPrice': 1017964862588434345, 'underlyerFloorPrice': 1016861032191715782, 'ONE': 1000000000000000000}, '0xba1462f43c6f60ebd1c62735c94e428ad073e01a': {'lastReport': 1753279643, 'ownedShares': 1053243607588726266454, 'cachedMaxDebtValue': 1053265943171028364421, 'cachedMinDebtValue': 1052969848487158796695, 'currentShares': 1053243607588726266454, 'underlyerCeilingPrice': 1002492535222704993, 'underlyerFloorPrice': 998567438159082596, 'ONE': 1000000000000000000}, '0xe4433d00cf48bfe0c672d9949f2cd2c008bffc04': {'lastReport': 1753279643, 'ownedShares': 1223170594540261839325, 'cachedMaxDebtValue': 1244484086688031987281, 'cachedMinDebtValue': 1244457577805973905529, 'currentShares': 1223170594540261839325, 'underlyerCeilingPrice': 1017964862588434345, 'underlyerFloorPrice': 1016861032191715782, 'ONE': 1000000000000000000}, '0x5c6aeb9ef0d5bba4e6691f381003503fd0d45126': {'lastReport': 1753279643, 'ownedShares': 2283879268922849226323, 'cachedMaxDebtValue': 2395528425710503251182, 'cachedMinDebtValue': 2395316943252542305907, 'currentShares': 2283879268922849226323, 'underlyerCeilingPrice': 1055105665502911991, 'underlyerFloorPrice': 986762407700314021, 'ONE': 1000000000000000000}, '0x40219bbda953ca811d2d0168dc806a96b84791d9': {'lastReport': 1753279643, 'ownedShares': 71089962883270806, 'cachedMaxDebtValue': 73277900880731666, 'cachedMinDebtValue': 73264697674925578, 'currentShares': 71089962883270806, 'underlyerCeilingPrice': 1071381589735968223, 'underlyerFloorPrice': 1005595311004051758, 'ONE': 1000000000000000000}, '0x3f55eedde51504e6ed0ec30e8289b4da11edb7f9': {'lastReport': 1753279643, 'ownedShares': 769406503278440269192, 'cachedMaxDebtValue': 806613061928247883703, 'cachedMinDebtValue': 806577723462303585068, 'currentShares': 769406503278440269192, 'underlyerCeilingPrice': 1087035717706460883, 'underlyerFloorPrice': 1003054468868113086, 'ONE': 1000000000000000000}, '0x43d99d04985ef2231f7d9b5d9111d2189d9fd971': {'lastReport': 1753279643, 'ownedShares': 204174639972068254010, 'cachedMaxDebtValue': 204178969796092097594, 'cachedMinDebtValue': 204121570895171999139, 'currentShares': 204174639972068254010, 'underlyerCeilingPrice': 1002492535222704993, 'underlyerFloorPrice': 998567425393532982, 'ONE': 1000000000000000000}, '0x9b163e15121816be53f8d5c85fbefd6e6d9bebcd': {'lastReport': 0, 'ownedShares': 0, 'cachedMaxDebtValue': 0, 'cachedMinDebtValue': 0, 'currentShares': 0, 'underlyerCeilingPrice': 1075760534589630501, 'underlyerFloorPrice': 888086344218395128, 'ONE': 1000000000000000000}, '0x4142e3a17391676c66ddf1285e43889f168ee237': {'lastReport': 1753279643, 'ownedShares': 22734366087291238776, 'cachedMaxDebtValue': 23044272343183439053, 'cachedMinDebtValue': 23044214150250174455, 'currentShares': 22734366087291238776, 'underlyerCeilingPrice': 1038633220901719458, 'underlyerFloorPrice': 987977271814166308, 'ONE': 1000000000000000000}, '0x87e25ffe5c3a2720cd43f5eb8ec41ac0ce699d07': {'lastReport': 1753279643, 'ownedShares': 3703821790973124995045, 'cachedMaxDebtValue': 3754310884855275447500, 'cachedMinDebtValue': 3754301404219066877288, 'currentShares': 3703821790973124995045, 'underlyerCeilingPrice': 1038633220901719458, 'underlyerFloorPrice': 987977271814166308, 'ONE': 1000000000000000000}, '0x2c7120dccf1c14a37a26a4955475d45d34a3d7e7': {'lastReport': 1753279643, 'ownedShares': 1603294068336473589648, 'cachedMaxDebtValue': 1871929508158025307217, 'cachedMinDebtValue': 1871910247029828096878, 'currentShares': 1603294068336473589648, 'underlyerCeilingPrice': 1167656092547845115, 'underlyerFloorPrice': 1167552194651527164, 'ONE': 1000000000000000000}}, 'withdrawalQueue': ['0x1ea622fa030e4a78f4cc2f305dd3c08da3f08573', '0x40219bbda953ca811d2d0168dc806a96b84791d9', '0xe4433d00cf48bfe0c672d9949f2cd2c008bffc04', '0xba1462f43c6f60ebd1c62735c94e428ad073e01a', '0x4142e3a17391676c66ddf1285e43889f168ee237', '0x5c6aeb9ef0d5bba4e6691f381003503fd0d45126', '0x3f55eedde51504e6ed0ec30e8289b4da11edb7f9', '0x87e25ffe5c3a2720cd43f5eb8ec41ac0ce699d07', '0x2c7120dccf1c14a37a26a4955475d45d34a3d7e7', '0x43d99d04985ef2231f7d9b5d9111d2189d9fd971', '0x2e0e2ab6505a1182367dfb1e3c66648bf3eea020', '0xc4eb861e7b66f593482a3d7e8adc314f6eeda30b'], 'withdrawalInfo': {}}
 
 # --- get_amount_out ---
 def test_get_amount_out_general(tokemak_module, tokens, fixed_parameters):
@@ -87,8 +87,12 @@ def test_get_amount_in_general(tokemak_module, tokens, fixed_parameters):
 
 def test_get_amount_in_exact(tokemak_module, tokens, fixed_parameters):
     output_amount = 1e18
-    asset = autopooldebt.total_assets_time_checked(pool_state, fixed_parameters, 'withdraw')
-    expected = (output_amount*pool_state['totalSupply'])//asset
+    asset = autopooldebt.total_assets_time_checked(pool_state, fixed_parameters, 'deposit')
+    expected = math.ceil(
+        (output_amount * asset)
+         /
+        pool_state['totalSupply']
+    )
     fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xASSET"], tokens["0xVAULT"], output_amount
     )
@@ -109,9 +113,10 @@ def test_get_amount_in_deposit_exact(tokemak_module, tokens, fixed_parameters):
     fee2, out = tokemak_module.get_amount_out(
         pool_state, fixed_parameters, tokens["0xASSET"], tokens["0xVAULT"], inp
     )
-    assert out == output_amount
     assert inp == expected
     assert fee is None
+    assert fee2 is None
+    assert out == output_amount
 
 def test_get_amount_in_redeem_exact(tokemak_module, tokens, fixed_parameters):
     output_amount = 10e18
@@ -124,24 +129,19 @@ def test_get_amount_in_redeem_exact(tokemak_module, tokens, fixed_parameters):
     fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xVAULT"], tokens["0xASSET"], output_amount
     )
+    fee2, out = tokemak_module.get_amount_out(
+        pool_state, fixed_parameters, tokens["0xVAULT"], tokens["0xASSET"], inp
+    )
     assert inp == expected
     assert fee is None
+    assert fee2 is None
+    assert out == output_amount
 
 def test_get_amount_in_stale(tokemak_module, tokens, fixed_parameters):
     fee, inp = tokemak_module.get_amount_in(
         pool_state, fixed_parameters, tokens["0xASSET"], tokens["0xVAULT"], 100
     )
     assert inp is None and fee is None
-
-def test_get_amount_in_vault_to_asset(tokemak_module, tokens, fixed_parameters):
-    output_amount = 100
-    # input = floor(100 * (1000+1)/(2000+1))
-    expected = (100*1001)//2001
-    fee, inp = tokemak_module.get_amount_in(
-        pool_state, fixed_parameters, tokens["0xVAULT"], tokens["0xASSET"], output_amount
-    )
-    assert inp == expected
-    assert fee is None
 
 # --- get_apy ---
 def test_get_apy_zero_days(tokemak_module, tokens, fixed_parameters):
