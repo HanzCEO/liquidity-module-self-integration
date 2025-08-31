@@ -1,5 +1,5 @@
 import pytest
-from modules.brownfi_liquidity_module import BrownFiLiquidityModule
+from modules.brownfiv1_liquidity_module import BrownFiV1LiquidityModule
 from templates.liquidity_module import Token
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def get_tvl_fixture():
 	return pool_state, fixed_parameters, pool_tokens
 
 def test_get_tvl(get_tvl_fixture):
-	module = BrownFiLiquidityModule()
+	module = BrownFiV1LiquidityModule()
 	pool_state, fixed_parameters, pool_tokens = get_tvl_fixture
 
 	expected = pool_tokens['0xtoken0'].reference_price + pool_tokens['0xtoken1'].reference_price
@@ -30,7 +30,7 @@ def test_get_tvl(get_tvl_fixture):
 	assert tvl == expected
 
 def test_get_tvl_different_decimal(get_tvl_fixture):
-	module = BrownFiLiquidityModule()
+	module = BrownFiV1LiquidityModule()
 	pool_state, fixed_parameters, pool_tokens = get_tvl_fixture
 
 	pool_tokens['0xtoken0'].decimals = 10

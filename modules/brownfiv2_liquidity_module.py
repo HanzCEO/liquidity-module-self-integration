@@ -2,7 +2,8 @@ from templates.liquidity_module import LiquidityModule, Token
 from typing import Dict, Optional
 from decimal import Decimal
 
-class BrownFiLiquidityModule(LiquidityModule):
+class BrownFiV2LiquidityModule(LiquidityModule):
+    # Derived from Router BrownFiV2Library
     def get_amount_out(
         self, 
         pool_state: Dict, 
