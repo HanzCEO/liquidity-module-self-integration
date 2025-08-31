@@ -68,6 +68,7 @@ class BrownFiV1LiquidityModule(LiquidityModule):
         output_token: Token,
         input_amount: int, 
     ) -> tuple[int | None, int | None]:
+        # TODO: get_amount_out of LP position, mint and burn
         reserve_in = 0
         reserve_out = 0
         oracle_price = int(pool_state.get('fetch_oracle_price'))
