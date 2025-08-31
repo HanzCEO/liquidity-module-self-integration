@@ -129,8 +129,65 @@ class BrownFiV1LiquidityModule(LiquidityModule):
         output_token: Token,
         output_amount: int
     ) -> tuple[int | None, int | None]:
-        # Implement logic to calculate required input amount given output amount
-        pass
+        oracle_price = int(pool_state.get('fetch_oracle_price'))
+        kappa = int(pool_state.get('kappa'))
+        fee_percentage = int(pool_state.get('fee'))
+        
+        token0, _ = self.sort_tokens(input_token.address, output_token.address)
+        zero_for_one = input_token.address == token0
+
+        if zero_for_one:
+            reserve_in = int(pool_state.get('reserve0'))
+            reserve_out = int(pool_state.get('reserve1'))
+        else:
+            reserve_in = int(pool_state.get('reserve1'))
+            reserve_out = int(pool_state.get('reserve0'))
+
+        if output_amount <= 0:
+            raise Exception("BrownFiV1Library: INSUFFICIENT_OUTPUT_AMOUNT")
+        if reserve_in <= 0 or reserve_out <= 0:
+            raise Exception("BrownFiV1Library: INSUFFICIENT_LIQUIDITY")
+
+        # Before fee
+        gross_output_amount = self._mul_div_rounding_up(
+            output_amount,
+            self.FEE_DENOMINATOR,
+            self.FEE_DENOMINATOR - fee_percentage
+        )
+
+        if gross_output_amount * 10 >= reserve_out * 9:
+            raise Exception("BrownFiV1Library: INSUFFICIENT_OUTPUT_AMOUNT")
+
+        # R = (K * dx) / (x - dx)
+        r = self._mul_div_rounding_up(
+            kappa,
+            gross_output_amount,
+            reserve_out - gross_output_amount
+        )
+
+        q128_x_2 = self.Q128 * 2
+        numerator_common = q128_x_2 + r
+        avg_price = 0
+        
+        if zero_for_one:
+            # Calculate the required amount of token0 (input) to get token1 (output)
+            # avgPrice = (2 + R) / (2 * P)
+            avg_price = self._mul_div_rounding_up(numerator_common, self.Q128, oracle_price * 2)
+        else:
+            # Calculate the required amount of token1 (input) to get token0 (output)
+            # avgPrice = P * (2 + R) / 2
+            avg_price = self._mul_div_rounding_up(oracle_price, numerator_common, q128_x_2)
+
+        # amountIn = amountOut * avgPrice
+        input_amount = self._mul_div_rounding_up(
+            gross_output_amount,
+            avg_price,
+            self.Q128
+        )
+        
+        fee = gross_output_amount - output_amount
+        
+        return input_amount, fee
 
     def get_apy(
         self, 

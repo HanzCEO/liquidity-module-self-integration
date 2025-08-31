@@ -23,10 +23,27 @@ def get_tvl_fixture():
 
 @pytest.fixture
 def get_amount_out_fixture():
+	# https://hermes.pyth.network/docs/#/rest/price_feeds_metadata
 	# Obtained from: https://berascan.com/address/0x95eeb3B1e77C38bF270E3Db8ad164e7c01A37cb6
 	# BERA-USDC.e V1 pool
 	pool_state = dict(
 		fetch_oracle_price=129443092171794569027180763301664279151315092042041,
+		kappa=6805647338418769410938486634724720640,
+		fee=15,
+		reserve0=883359,
+		reserve1=324574876517183227,
+		token0_balance=883359,
+		token1_balance=324574876517183227
+	)
+
+	return pool_state
+
+@pytest.fixture
+def get_amount_in_fixture():
+	# Obtained from: https://berascan.com/address/0x95eeb3B1e77C38bF270E3Db8ad164e7c01A37cb6
+	# BERA-USDC.e V1 pool
+	pool_state = dict(
+		fetch_oracle_price=131140749449501517724860330728660697551863420087029,
 		kappa=6805647338418769410938486634724720640,
 		fee=15,
 		reserve0=883359,
@@ -77,3 +94,25 @@ def test_get_amount_out(get_amount_out_fixture):
 	assert type(output_amount) is int
 	assert type(fee) is int
 	assert output_amount == expected
+
+def test_get_amount_in(get_amount_in_fixture):
+	module = BrownFiV1LiquidityModule()
+	pool_state = get_amount_in_fixture
+
+	bera_token = Token('0x6969696969696969696969696969696969696969', 'BERA', 18, 2.19/ETH_PRICE)
+	usdc_token = Token('0x549943e04f40284185054145c6E4e9568C1D3241', 'USDC.e', 6, 1/ETH_PRICE)
+
+	output_amount = 83152
+	expected = 32127363770508483
+
+	input_amount, fee = module.get_amount_in(
+		pool_state=pool_state,
+		fixed_parameters={},
+		input_token=bera_token,
+		output_token=usdc_token,
+		output_amount=output_amount
+	)
+
+	assert isinstance(input_amount, int)
+	assert isinstance(fee, int)
+	assert input_amount == expected
