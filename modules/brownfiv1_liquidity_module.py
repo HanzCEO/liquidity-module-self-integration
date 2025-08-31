@@ -1,8 +1,65 @@
+import math
 from templates.liquidity_module import LiquidityModule, Token
 from typing import Dict, Optional
 from decimal import Decimal
 
 class BrownFiV1LiquidityModule(LiquidityModule):
+    FEE_DENOMINATOR = 10_000
+    Q128 = 1 << 128
+
+    @staticmethod
+    def _mul_div(a: int, b: int, denominator: int) -> int:
+        """
+        Replicates Solidity's FullMath.mulDiv, performing (a * b) / denominator with high precision.
+        """
+        return (a * b) // denominator
+
+    @staticmethod
+    def _mul_div_rounding_up(a: int, b: int, denominator: int) -> int:
+        """
+        Replicates Solidity's FullMath.mulDivRoundingUp, performing ceil((a * b) / denominator).
+        """
+        return (a * b + denominator - 1) // denominator
+
+    def sort_tokens(self, token_a, token_b):
+        if (token_a == token_b):
+            raise Exception("BrownFiV1Library: IDENTICAL_ADDRESSES")
+        
+        a = int(token_a, 16)
+        b = int(token_b, 16)
+
+        token0, token1 = (token_a, token_b) if a < b else (token_b, token_a)
+        return token0, token1
+
+    def delta(self, amount_in, reserve_out, kappa, oracle_price, is_sell):
+        temp1 = 0
+        temp2 = 0
+
+        if is_sell:
+            # temp1 = (P * dx - y)^2
+            mul_div_val = self._mul_div(oracle_price, amount_in, self.Q128)
+            if mul_div_val < reserve_out:
+                temp1 = reserve_out - mul_div_val
+            else:
+                temp1 = mul_div_val - reserve_out
+            temp1 *= temp1
+        else:
+            # temp1 = (P * x - dy)^2
+            mul_div_val = self._mul_div(oracle_price, reserve_out, self.Q128)
+            if mul_div_val < amount_in:
+                temp1 = amount_in - mul_div_val
+            else:
+                temp1 = mul_div_val - amount_in
+            temp1 *= temp1
+        
+        # temp2 = 2 * P * K * y * dx
+        term1 = self._mul_div(oracle_price, amount_in, self.Q128)
+        term2 = self._mul_div(kappa, reserve_out, self.Q128)
+        temp2 = term1 * term2 * 2
+        
+        delta_val = temp1 + temp2
+        return delta_val
+        
     def get_amount_out(
         self, 
         pool_state: Dict, 
@@ -11,8 +68,58 @@ class BrownFiV1LiquidityModule(LiquidityModule):
         output_token: Token,
         input_amount: int, 
     ) -> tuple[int | None, int | None]:
-        # Implement logic to calculate output amount given input amount
-        pass
+        reserve_in = 0
+        reserve_out = 0
+        oracle_price = int(pool_state.get('fetch_oracle_price'))
+        kappa = int(pool_state.get('kappa'))
+        fee_percentage = int(pool_state.get('fee'))
+        
+        token0, _ = self.sort_tokens(input_token.address, output_token.address)
+        zero_for_one = input_token.address == token0
+
+        if zero_for_one:
+            reserve_in = int(pool_state.get('reserve0'))
+            reserve_out = int(pool_state.get('reserve1'))
+        else:
+            reserve_in = int(pool_state.get('reserve1'))
+            reserve_out = int(pool_state.get('reserve0'))
+
+        if input_amount <= 0:
+            raise Exception("BrownFiV1Library: INSUFFICIENT_INPUT_AMOUNT")
+        if reserve_in <= 0 or reserve_out <= 0:
+            raise Exception("BrownFiV1Library: INSUFFICIENT_LIQUIDITY")
+        
+        amount_out_before_fee = 0
+        if kappa == self.Q128 * 2:
+            if zero_for_one:
+                # dy = P * y * dx / (P * dx + y)
+                numerator = self._mul_div(oracle_price, reserve_out, self.Q128) * input_amount
+                denominator = self._mul_div_rounding_up(oracle_price, input_amount, self.Q128) + reserve_out
+                amount_out_before_fee = numerator // denominator
+            else:
+                # dx = (x * dy) / (P * x + dy)
+                numerator = input_amount * reserve_out
+                denominator = self._mul_div_rounding_up(oracle_price, reserve_out, self.Q128) + input_amount
+                amount_out_before_fee = numerator // denominator
+        else:
+            delta_val = self.delta(input_amount, reserve_out, kappa, oracle_price, zero_for_one)
+            sqrt_delta = int(math.sqrt(delta_val))
+            
+            if zero_for_one:
+                # (P * dx + y - sqrt(delta)) / (2 - K)
+                numerator = self._mul_div(oracle_price, input_amount, self.Q128) + reserve_out - sqrt_delta
+                denominator = self.Q128 * 2 - kappa
+                amount_out_before_fee = self._mul_div(numerator, self.Q128, denominator)
+            else:
+                # (P * x + dy - sqrt(delta)) / (P * (2 - K))
+                numerator = self._mul_div(oracle_price, reserve_out, self.Q128) + input_amount - sqrt_delta
+                denominator = self._mul_div(oracle_price, (self.Q128 * 2 - kappa), self.Q128)
+                amount_out_before_fee = self._mul_div(numerator, self.Q128, denominator)
+        
+        fee = self._mul_div(amount_out_before_fee, fee_percentage, self.FEE_DENOMINATOR)
+        output_amount = self._mul_div(amount_out_before_fee, (self.FEE_DENOMINATOR - fee_percentage), self.FEE_DENOMINATOR)
+
+        return output_amount, fee
 
     def get_amount_in(
         self, 
@@ -26,11 +133,11 @@ class BrownFiV1LiquidityModule(LiquidityModule):
         pass
 
     def get_apy(
-		self, 
-		pool_state: Dict,
-		underlying_amount:int,
-		underlying_token:Token, 
-		pool_tokens: Dict[str, Token]
+        self, 
+        pool_state: Dict,
+        underlying_amount:int,
+        underlying_token:Token, 
+        pool_tokens: Dict[str, Token]
     ) -> int:
         # Implement APY calculation logic
         pass
