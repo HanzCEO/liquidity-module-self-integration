@@ -192,12 +192,47 @@ class BrownFiV1LiquidityModule(LiquidityModule):
     def get_apy(
         self, 
         pool_state: Dict,
-        underlying_amount:int,
-        underlying_token:Token, 
-        pool_tokens: Dict[str, Token]
+        fixed_parameters: Dict,
+        pool_tokens: Dict[str, Token],
+        input0_amount: int = 0,
+        input1_amount: int = 0,
     ) -> int:
-        # Implement APY calculation logic
-        pass
+        token0_address = fixed_parameters.get('token0_address')
+        token1_address = fixed_parameters.get('token1_address')
+        token0 = pool_tokens.get(token0_address)
+        token1 = pool_tokens.get(token1_address)
+
+        if not token0 or not token1 or token0.reference_price is None or token1.reference_price is None:
+            return 0
+        
+        # dillute to tvl
+        pool_state['token0_balance'] += input0_amount
+        pool_state['token1_balance'] += input1_amount
+
+        tvl = self.get_tvl(pool_state, fixed_parameters, pool_tokens)
+
+        if tvl == 0:
+            return 0
+
+        fee_data = pool_state.get('fees_over_period', {})
+        fee_amount0 = fee_data.get('amount0', 0)
+        fee_amount1 = fee_data.get('amount1', 0)
+        days = fee_data.get('days', 0)
+
+        if days == 0 or (fee_amount0 == 0 and fee_amount1 == 0):
+            return 0
+            
+        fee_value0 = self._mul_div(fee_amount0, token0.reference_price, 10**token0.decimals)
+        fee_value1 = self._mul_div(fee_amount1, token1.reference_price, 10**token1.decimals)
+        total_fees = fee_value0 + fee_value1
+        
+        daily_rate_decimal = Decimal(total_fees) / Decimal(tvl) / Decimal(days)
+        
+        apy_decimal = ((Decimal(1) + daily_rate_decimal) ** 365) - Decimal(1)
+
+        apy_bps = int(apy_decimal * 10_000)
+        
+        return apy_bps
 
     def get_tvl(
         self, 
