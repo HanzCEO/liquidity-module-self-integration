@@ -50,11 +50,11 @@ class BrownFiLiquidityModule(LiquidityModule):
         rprice1 = pool_tokens[token1_address].reference_price
 
         tvl0 = token0_amount * rprice0
-        tvl0 /= 10 ** pool_tokens[token0_address].decimals
+        tvl0 //= 10 ** pool_tokens[token0_address].decimals
         
         tvl1 = token1_amount * rprice1
-        tvl1 /= 10 ** pool_tokens[token1_address].decimals
+        tvl1 //= 10 ** pool_tokens[token1_address].decimals
 
         tvl = tvl0 + tvl1
 
-        return tvl
+        return int(tvl)
