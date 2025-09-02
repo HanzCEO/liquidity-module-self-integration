@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from decimal import Decimal
 
 class BrownFiV2LiquidityModule(LiquidityModule):
+    MINIMUM_LIQUIDITY = 10**3
     Q64 = 1 << 64
     PRECISION = 10**8
     DECIMALS = 18
@@ -15,12 +16,14 @@ class BrownFiV2LiquidityModule(LiquidityModule):
         return (a * b) // c
     
     @staticmethod
+    # parseRawToDefaultDecimals
     def _to_norm(amount: int, decimals: int) -> int:
         if decimals > BrownFiV2LiquidityModule.DECIMALS:
             return amount // (10 ** (decimals - BrownFiV2LiquidityModule.DECIMALS))
         return amount * (10 ** (BrownFiV2LiquidityModule.DECIMALS - decimals))
 
     @staticmethod
+    # parseDefaultDecimalsToRaw
     def _to_raw(amount: int, decimals: int) -> int:
         if decimals > BrownFiV2LiquidityModule.DECIMALS:
             return amount * (10 ** (decimals - BrownFiV2LiquidityModule.DECIMALS))
@@ -97,6 +100,38 @@ class BrownFiV2LiquidityModule(LiquidityModule):
         amount_in_with_fee = self.mul_div(amount_in_normalized, self.PRECISION + fee, self.PRECISION)
 
         return self._to_raw(amount_in_with_fee, input_token.decimals)
+    
+    def _mint(
+        self,
+        reserve0: int, reserve1: int,
+        balance0: int, balance1: int,
+        price0: int, price1: int,
+        token0: Token, token1: Token,
+        total_supply: int
+    ) -> int:
+        amount0 = balance0 - reserve0
+        amount1 = balance1 - reserve1
+
+        parsed_amount0 = self._to_norm(amount0, token0.decimals)
+        parsed_amount1 = self._to_norm(amount1, token1.decimals)
+
+        min_value = math.min(parsed_amount0 * price0, parsed_amount1 * price1)
+
+        if total_supply == 0:
+            liquidity = min_value * 2 // self.Q64 - self.MINIMUM_LIQUIDITY
+        else:
+            parsed_reserve0 = self._to_norm(reserve0, token0.decimals)
+            parsed_reserve1 = self._to_norm(reserve1, token1.decimals)
+            liquidity = self.mul_div(
+                total_supply,
+                min_value * 2,
+                price0 * parsed_reserve0 + (price1 * parsed_reserve1)
+            )
+        
+        if liquidity <= 0:
+            raise Exception("BrownFiV2: INSUFFICIENT_LIQUIDITY_MINTED")
+        
+        return liquidity
 
     def get_amount_out(
         self,
