@@ -339,13 +339,13 @@ class BrownFiV2LiquidityModule(LiquidityModule):
             )
 
             # swap into one asset: output_token
-            if output_token is token0:
+            if output_token.address == token0.address:
                 res_out = new_reserve0
                 output_amount = output0
 
                 input_token = token1
                 input_amount = output1
-            elif output_token is token1:
+            elif output_token.address == token1.address:
                 res_out = new_reserve1
                 output_amount = output1
 

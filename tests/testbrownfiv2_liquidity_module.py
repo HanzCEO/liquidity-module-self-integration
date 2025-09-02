@@ -160,6 +160,26 @@ def test_get_amount_out_mint(get_amount_out_lp_action_fixture):
 	assert expected == output_amount
 	assert fee < input_amount
 
+def test_get_amount_out_burn(get_amount_out_lp_action_fixture):
+	module = BrownFiV2LiquidityModule()
+	pool_state, fixed_parameters, input_token, output_token = get_amount_out_lp_action_fixture
+
+	input_amount = 67139450232358313984
+	expected = 99556260 # $100 - fee
+
+	input_token, output_token = output_token, input_token
+
+	output_amount, fee = module.get_amount_out(
+		pool_state, fixed_parameters,
+		input_token, output_token,
+		input_amount
+	)
+
+	assert isinstance(output_amount, int)
+	assert isinstance(fee, int)
+	assert expected == output_amount
+	assert fee < input_amount
+
 def test_get_amount_in(get_amount_in_fixture):
 	# Source of truth: https://berascan.com/address/0x3f0bbeedea5e5f63a14cbda82718d4f25501fbea#readContract
 	module = BrownFiV2LiquidityModule()
