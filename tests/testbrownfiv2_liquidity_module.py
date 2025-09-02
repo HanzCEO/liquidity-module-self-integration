@@ -100,6 +100,47 @@ def get_amount_lp_action_fixture():
 
 	return pool_state, fixed_parameters, input_token, output_token
 
+@pytest.fixture
+def get_apy_fixture():
+	pool_state = dict(
+		reserve0=20486201958,
+		reserve1=9898220874360809436015,
+		price0=18445232178565270381,
+		price1=43337241514915150978,
+		k=92233720368547760,
+		fee=300000,
+
+		balance0=20486201958,
+		balance1=9898220874360809436015,
+		total_supply=29447185821021052375646
+	)
+	pool_state["lambda"] = 46116860184273880
+	# APY: 100%
+	pool_state["fees_over_period"] = dict(
+		amount0=20486201958,
+		amount1=9898220874360809436015,
+		days=365
+	)
+	
+	fixed_parameters = dict(
+		token0_address=USDC.address,
+		token1_address=BERA.address,
+		token0_decimals=USDC.decimals,
+		token1_decimals=BERA.decimals,
+		lp_token_address=LP.address
+	)
+
+	underlying_amount = 100e6
+	underlying_token = USDC
+	
+	pool_tokens = {
+		USDC.address: USDC,
+		BERA.address: BERA,
+		LP.address: LP
+	}
+
+	return pool_state, fixed_parameters, underlying_amount, underlying_token, pool_tokens
+
 def test_get_tvl(get_tvl_fixture):
 	module = BrownFiV2LiquidityModule()
 	pool_state, fixed_parameters, pool_tokens = get_tvl_fixture
@@ -237,3 +278,36 @@ def test_get_amount_in_burn(get_amount_lp_action_fixture):
 	assert isinstance(fee, int)
 	assert abs(expected - input_amount) <= tolerance
 	assert fee > 0
+
+def test_get_apy(get_apy_fixture):
+	module = BrownFiV2LiquidityModule()
+	pool_state, fixed_parameters, underlying_amount, underlying_token, pool_tokens = get_apy_fixture
+
+	underlying_amount = 1000e6
+	expected = 18239
+
+	apy = module.get_apy(
+		pool_state, fixed_parameters,
+		underlying_amount, underlying_token,
+		pool_tokens
+	)
+
+	assert isinstance(apy, int)
+	assert apy == expected
+
+def test_get_apy_with_dillution(get_apy_fixture):
+	module = BrownFiV2LiquidityModule()
+	pool_state, fixed_parameters, underlying_amount, underlying_token, pool_tokens = get_apy_fixture
+
+	underlying_amount = 1e6 * 1e6
+	not_expected = 18239
+
+	apy = module.get_apy(
+		pool_state, fixed_parameters,
+		underlying_amount, underlying_token,
+		pool_tokens
+	)
+
+	assert isinstance(apy, int)
+	# apy must be lower when investing $1M than investing $1K
+	assert apy < not_expected

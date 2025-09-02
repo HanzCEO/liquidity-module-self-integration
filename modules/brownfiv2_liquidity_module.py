@@ -497,11 +497,60 @@ class BrownFiV2LiquidityModule(LiquidityModule):
     def get_apy(
         self, 
         pool_state: Dict,
-        underlying_amount:int,
-        underlying_token:Token, 
+        fixed_parameters: Dict,
+        underlying_amount: int,
+        underlying_token: Token,
         pool_tokens: Dict[str, Token]
     ) -> int:
-        pass
+        token0_address, token1_address = fixed_parameters["token0_address"], fixed_parameters["token1_address"]
+        token0, token1 = pool_tokens[token0_address], pool_tokens[token1_address]
+        total_supply = pool_state["total_supply"]
+
+        # simulate 50:50 LP position
+        half_amount = underlying_amount // 2
+        to_token = token1 if underlying_token.address == token0_address else token0
+
+        # calculate LP tokens received
+        my_liquidity, _ = self.get_amount_out(
+            pool_state, fixed_parameters,
+            underlying_token, Token(fixed_parameters["lp_token_address"], "LP", 18, 0),
+            underlying_amount
+        )
+        total_supply += my_liquidity
+
+        # swap half to the other token
+        swapped_amount, _ = self.get_amount_out(
+            pool_state, fixed_parameters,
+            underlying_token, to_token,
+            half_amount
+        )
+
+        # calculate combined value
+        if underlying_token.address == token0_address:
+            my_value = half_amount * token0.reference_price + swapped_amount * token1.reference_price
+        else:
+            my_value = swapped_amount * token0.reference_price + half_amount * token1.reference_price
+
+        # get fee data
+        fee_data = pool_state.get('fees_over_period', {})
+        fee0 = fee_data.get('amount0', 0)
+        fee1 = fee_data.get('amount1', 0)
+        days = fee_data.get('days', 0)
+        if days == 0:
+            raise Exception("day == 0, cannot calculate APY")
+
+        # normalize fees
+        total_fees = fee0 * token0.reference_price + fee1 * token1.reference_price
+        daily_fees = total_fees / days
+
+        my_daily_fees = daily_fees * my_liquidity / total_supply
+        my_daily_yield = my_daily_fees / my_value
+
+        apy = (1 + my_daily_yield) ** 365 - 1
+        apy_bps = apy * 10_000
+
+        return int(apy_bps)
+
 
     def get_tvl(
         self, 
