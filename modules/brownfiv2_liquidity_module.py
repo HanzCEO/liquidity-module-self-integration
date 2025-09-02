@@ -222,7 +222,7 @@ class BrownFiV2LiquidityModule(LiquidityModule):
 
         final_amt = self._to_raw(amount_out_normalized, output_token.decimals)
         # fee is in input amount
-        fee = input_amount - amount_in_after_fee
+        fee = int(input_amount - amount_in_after_fee)
         if fee < 0:
             fee = 0
 
@@ -384,33 +384,115 @@ class BrownFiV2LiquidityModule(LiquidityModule):
         if output_amount <= 0:
             return None, None
 
-        token0_address, _ = self.sort_tokens(input_token.address, output_token.address)
-
-        if input_token.address == token0_address:
-            res_in, res_out = pool_state["reserve0"], pool_state["reserve1"]
-            p_in_initial, p_out_initial = pool_state["price0"], pool_state["price1"]
-        else:
-            res_in, res_out = pool_state["reserve1"], pool_state["reserve0"]
-            p_in_initial, p_out_initial = pool_state["price1"], pool_state["price0"]
-        
-        if res_out <= 0:
-            return None, None
-
+        token0_address, token1_address = fixed_parameters["token0_address"], fixed_parameters["token1_address"]
+        reserve0, reserve1 = pool_state["reserve0"], pool_state["reserve1"]
+        price0, price1 = pool_state["price0"], pool_state["price1"]
         lambda_val = pool_state["lambda"]
-        (p_in, p_out) = self._get_skewness_price(
-            input_token, output_token, res_in, res_out, p_in_initial, p_out_initial, lambda_val
-        )
+        k = pool_state["k"]
+        fee_percentage = pool_state["fee"]
+        token0 = Token(token0_address, "T0", fixed_parameters["token0_decimals"], 0)
+        token1 = Token(token1_address, "T1", fixed_parameters["token1_decimals"], 0)
 
-        try:
-            k = pool_state["k"]
-            fee = pool_state["fee"]
-            
-            final_amt = self._calculate_amount_in(
-                output_amount, res_out, p_in, p_out, k, fee, input_token, output_token
+        is_lp_action = 0
+        if input_token.address == fixed_parameters["lp_token_address"]:
+            is_lp_action = 2 # burn
+        elif output_token.address == fixed_parameters["lp_token_address"]:
+            is_lp_action = 1 # mint
+
+        if is_lp_action == 0:
+            res_in, res_out, p_in, p_out = self._prepare_swap(
+                input_token, output_token,
+                token0_address,
+                reserve0, reserve1,
+                price0, price1,
+                lambda_val
             )
-            return final_amt, fee
-        except ValueError:
-            return None, None
+            input_amount = self._calculate_amount_in(
+                output_amount, res_out, p_in, p_out, k, fee_percentage, input_token, output_token
+            )
+            inter_amt = self._calculate_amount_in(
+                output_amount, res_out, p_in, p_out, k, 0, input_token, output_token
+            )
+            fee = inter_amt - input_amount
+        elif is_lp_action == 1:
+            # only load these params when needed
+            balance0, balance1 = pool_state["balance0"], pool_state["balance1"]
+
+            # Binary search for input_amount that yields output_amount within tolerance
+            left = 0
+            right = 2**256
+            best_input = None
+            tolerance = 1e14 # 0.0001 LP token
+
+            while left <= right:
+                mid = (left + right) // 2
+                pool_state["fee"] = 0
+                i_output_amount, _ = self.get_amount_out(
+                    pool_state, fixed_parameters,
+                    input_token, output_token,
+                    mid
+                )
+                pool_state["fee"] = fee_percentage
+
+                if i_output_amount is None:
+                    right = mid - 1
+                    continue
+
+                if abs(i_output_amount - output_amount) <= tolerance:
+                    best_input = mid
+                    break
+                elif i_output_amount > output_amount:
+                    right = mid - 1
+                else:
+                    left = mid + 1
+
+            input_amount = best_input
+            fee = 0 if input_amount is None else self._calculate_amount_in(
+                output_amount, balance1, price0, price1, k, fee_percentage, input_token, output_token
+            ) - self._calculate_amount_in(
+                output_amount, balance1, price0, price1, k, 0, input_token, output_token
+            )
+        elif is_lp_action == 2:
+            # only load these params when needed
+            balance0, balance1 = pool_state["balance0"], pool_state["balance1"]
+
+            # Binary search for input_amount that yields output_amount within tolerance
+            left = 0
+            right = 2**256
+            best_input = None
+            tolerance = 10**output_token.decimals // 2
+
+            while left <= right:
+                mid = (left + right) // 2
+                pool_state["fee"] = 0
+                i_output_amount, _ = self.get_amount_out(
+                    pool_state, fixed_parameters,
+                    input_token, output_token,
+                    mid
+                )
+                pool_state["fee"] = fee_percentage
+
+                if i_output_amount is None:
+                    right = mid - 1
+                    continue
+
+                if abs(i_output_amount - output_amount) <= tolerance:
+                    best_input = mid
+                    break
+                elif i_output_amount > output_amount:
+                    right = mid - 1
+                else:
+                    left = mid + 1
+
+            input_amount = best_input
+            fee = 0 if input_amount is None else self._calculate_amount_in(
+                output_amount, balance1, price0, price1, k, fee_percentage, input_token, output_token
+            ) - self._calculate_amount_in(
+                output_amount, balance1, price0, price1, k, 0, input_token, output_token
+            )
+            fee = int(fee)
+
+        return input_amount, fee
 
     def get_apy(
         self, 

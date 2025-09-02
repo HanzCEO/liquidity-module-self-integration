@@ -73,7 +73,7 @@ def get_amount_in_fixture():
 	return pool_state, fixed_parameters, input_token, output_token
 
 @pytest.fixture
-def get_amount_out_lp_action_fixture():
+def get_amount_lp_action_fixture():
 	pool_state = dict(
 		reserve0=20486201958,
 		reserve1=9898220874360809436015,
@@ -142,9 +142,9 @@ def test_get_amount_out(get_amount_out_fixture):
 	assert expected == output_amount
 	assert fee < input_amount
 
-def test_get_amount_out_mint(get_amount_out_lp_action_fixture):
+def test_get_amount_out_mint(get_amount_lp_action_fixture):
 	module = BrownFiV2LiquidityModule()
-	pool_state, fixed_parameters, input_token, output_token = get_amount_out_lp_action_fixture
+	pool_state, fixed_parameters, input_token, output_token = get_amount_lp_action_fixture
 
 	input_amount = 100e6 # $100
 	expected = 67139450232358313984
@@ -160,9 +160,9 @@ def test_get_amount_out_mint(get_amount_out_lp_action_fixture):
 	assert expected == output_amount
 	assert fee < input_amount
 
-def test_get_amount_out_burn(get_amount_out_lp_action_fixture):
+def test_get_amount_out_burn(get_amount_lp_action_fixture):
 	module = BrownFiV2LiquidityModule()
-	pool_state, fixed_parameters, input_token, output_token = get_amount_out_lp_action_fixture
+	pool_state, fixed_parameters, input_token, output_token = get_amount_lp_action_fixture
 
 	input_amount = 67139450232358313984
 	expected = 99556260 # $100 - fee
@@ -198,3 +198,42 @@ def test_get_amount_in(get_amount_in_fixture):
 	assert isinstance(fee, int)
 	assert expected == input_amount
 	assert fee < input_amount
+
+def test_get_amount_in_mint(get_amount_lp_action_fixture):
+	module = BrownFiV2LiquidityModule()
+	pool_state, fixed_parameters, input_token, output_token = get_amount_lp_action_fixture
+
+	output_amount = 67139450232358313984
+	expected = int(100e6) # $100 USDC
+	tolerance = 5e5 # $0.5 USDC
+
+	input_amount, fee = module.get_amount_in(
+		pool_state, fixed_parameters,
+		input_token, output_token,
+		output_amount
+	)
+
+	assert isinstance(input_amount, int)
+	assert isinstance(fee, int)
+	assert abs(expected - input_amount) <= tolerance
+	assert fee < input_amount
+
+def test_get_amount_in_burn(get_amount_lp_action_fixture):
+	module = BrownFiV2LiquidityModule()
+	pool_state, fixed_parameters, input_token, output_token = get_amount_lp_action_fixture
+	input_token, output_token = output_token, input_token
+
+	output_amount = 100e6 # $100 USDC
+	expected = 67139450232358313984
+	tolerance = 5e17 # 0.5 LP token
+
+	input_amount, fee = module.get_amount_in(
+		pool_state, fixed_parameters,
+		input_token, output_token,
+		output_amount
+	)
+
+	assert isinstance(input_amount, int)
+	assert isinstance(fee, int)
+	assert abs(expected - input_amount) <= tolerance
+	assert fee > 0
