@@ -2,6 +2,10 @@ import pytest
 from modules.brownfiv2_liquidity_module import BrownFiV2LiquidityModule
 from templates.liquidity_module import Token
 
+BERA_PRICE = 2.19 #USD
+BERA = Token("0x6969696969696969696969696969696969696969", "BERA", 18, 1e18)
+USDC = Token("0x549943e04f40284185054145c6E4e9568C1D3241", "USDC.e", 6, 1*1e18//BERA_PRICE)
+
 @pytest.fixture
 def get_tvl_fixture():
 	pool_state = dict(
@@ -18,6 +22,61 @@ def get_tvl_fixture():
 	}
 
 	return pool_state, fixed_parameters, pool_tokens
+
+@pytest.fixture
+def get_amount_out_fixture():
+	pool_state = dict(
+		reserve0=20486201958,
+		reserve1=9898220874360809436015,
+		price0=18445232178565270381,
+		price1=43337241514915150978,
+		k=92233720368547760,
+		fee=300000
+	)
+	pool_state["lambda"] = 46116860184273880
+	
+	fixed_parameters = dict()
+	input_token = BERA
+	output_token = USDC
+
+	return pool_state, fixed_parameters, input_token, output_token
+
+
+@pytest.fixture
+def get_amount_out_fixture():
+	pool_state = dict(
+		reserve0=20486201958,
+		reserve1=9898220874360809436015,
+		price0=18445232178565270381,
+		price1=43337241514915150978,
+		k=92233720368547760,
+		fee=300000
+	)
+	pool_state["lambda"] = 46116860184273880
+	
+	fixed_parameters = dict()
+	input_token = BERA
+	output_token = USDC
+
+	return pool_state, fixed_parameters, input_token, output_token
+
+@pytest.fixture
+def get_amount_in_fixture():
+	pool_state = dict(
+		reserve0=20486201958,
+		reserve1=9898220874360809436015,
+		price0=18445232178565270381,
+		price1=43337241514915150978,
+		k=92233720368547760,
+		fee=300000
+	)
+	pool_state["lambda"] = 46116860184273880
+	
+	fixed_parameters = dict()
+	input_token = BERA
+	output_token = USDC
+
+	return pool_state, fixed_parameters, input_token, output_token
 
 def test_get_tvl(get_tvl_fixture):
 	module = BrownFiV2LiquidityModule()
@@ -41,3 +100,41 @@ def test_get_tvl_different_decimal(get_tvl_fixture):
 	tvl = module.get_tvl(pool_state, fixed_parameters, pool_tokens)
 	assert type(tvl) is int
 	assert tvl == expected
+
+def test_get_amount_out(get_amount_out_fixture):
+	# Source of truth: https://berascan.com/address/0x3f0bbeedea5e5f63a14cbda82718d4f25501fbea#readContract
+	module = BrownFiV2LiquidityModule()
+	pool_state, fixed_paratemers, input_token, output_token = get_amount_out_fixture
+
+	input_amount = 368933087451577728
+	expected = 863945
+
+	output_amount, fee = module.get_amount_out(
+		pool_state, fixed_paratemers,
+		input_token, output_token,
+		input_amount
+	)
+
+	assert isinstance(output_amount, int)
+	assert isinstance(fee, int)
+	assert expected == output_amount
+	assert fee < input_amount
+
+def test_get_amount_in(get_amount_in_fixture):
+	# Source of truth: https://berascan.com/address/0x3f0bbeedea5e5f63a14cbda82718d4f25501fbea#readContract
+	module = BrownFiV2LiquidityModule()
+	pool_state, fixed_paratemers, input_token, output_token = get_amount_in_fixture
+
+	output_amount = 863945
+	expected = 368932941208250605
+
+	input_amount, fee = module.get_amount_in(
+		pool_state, fixed_paratemers,
+		input_token, output_token,
+		output_amount
+	)
+
+	assert isinstance(input_amount, int)
+	assert isinstance(fee, int)
+	assert expected == input_amount
+	assert fee < input_amount
