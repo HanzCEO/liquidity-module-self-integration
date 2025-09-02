@@ -132,6 +132,19 @@ class BrownFiV2LiquidityModule(LiquidityModule):
             raise Exception("BrownFiV2: INSUFFICIENT_LIQUIDITY_MINTED")
         
         return liquidity
+    
+    def _burn(
+        self,
+        balance0: int, balance1: int,
+        liquidity: int, total_supply: int
+    ) -> int:
+        amount0 = self.mul_div(liquidity, balance0, total_supply)
+        amount1 = self.mul_div(liquidity, balance1, total_supply)
+
+        if amount0 <= 0 or amount1 <= 0:
+            raise Exception("BrownFiV2: INSUFFICIENT_LIQUIDITY_BURNED")
+        
+        return amount0, amount1
 
     def get_amount_out(
         self,
