@@ -115,10 +115,10 @@ class BrownFiV2LiquidityModule(LiquidityModule):
         parsed_amount0 = self._to_norm(amount0, token0.decimals)
         parsed_amount1 = self._to_norm(amount1, token1.decimals)
 
-        min_value = math.min(parsed_amount0 * price0, parsed_amount1 * price1)
+        min_value = min(parsed_amount0 * price0, parsed_amount1 * price1)
 
         if total_supply == 0:
-            liquidity = min_value * 2 // self.Q64 - self.MINIMUM_LIQUIDITY
+            liquidity = self.mul_div(min_value, 2, self.Q64) - self.MINIMUM_LIQUIDITY
         else:
             parsed_reserve0 = self._to_norm(reserve0, token0.decimals)
             parsed_reserve1 = self._to_norm(reserve1, token1.decimals)
@@ -131,53 +131,60 @@ class BrownFiV2LiquidityModule(LiquidityModule):
         if liquidity <= 0:
             raise Exception("BrownFiV2: INSUFFICIENT_LIQUIDITY_MINTED")
         
-        return liquidity
+        return int(liquidity)
     
     def _burn(
         self,
         balance0: int, balance1: int,
         liquidity: int, total_supply: int
-    ) -> int:
+    ) -> tuple[int, int, int, int]:
         amount0 = self.mul_div(liquidity, balance0, total_supply)
         amount1 = self.mul_div(liquidity, balance1, total_supply)
 
         if amount0 <= 0 or amount1 <= 0:
             raise Exception("BrownFiV2: INSUFFICIENT_LIQUIDITY_BURNED")
         
-        return amount0, amount1
+        new_reserve0 = balance0 - amount0
+        new_reserve1 = balance1 - amount1
 
-    def get_amount_out(
+        return amount0, amount1, new_reserve0, new_reserve1
+    
+    def _prepare_swap(
         self,
-        pool_state: Dict,
-        fixed_parameters: Dict,
-        input_token: Token,
-        output_token: Token,
-        input_amount: int
-    ) -> tuple[int | None, int | None]:
-        if input_amount <= 0:
-            return None, None
-
-        token0_address, _ = self.sort_tokens(input_token.address, output_token.address)
-
+        input_token: Token, output_token: Token,
+        token0_address: str,
+        reserve0: int, reserve1: int,
+        price0: int, price1: int,
+        lambda_val: int
+    ) -> tuple[int, int, int, int]:
         if input_token.address == token0_address:
-            res_in, res_out = pool_state["reserve0"], pool_state["reserve1"]
-            p_in_initial, p_out_initial = pool_state["price0"], pool_state["price1"]
+            res_in, res_out = reserve0, reserve1
+            p_in_initial, p_out_initial = price0, price1
         else:
-            res_in, res_out = pool_state["reserve1"], pool_state["reserve0"]
-            p_in_initial, p_out_initial = pool_state["price1"], pool_state["price0"]
+            res_in, res_out = reserve1, reserve0
+            p_in_initial, p_out_initial = price1, price0
         
         if res_out <= 0:
-            return None, None
+            raise Exception("Prepare swap failed: res_out <= 0")
         
-        lambda_val = pool_state["lambda"]
-        (p_in, p_out) = self._get_skewness_price(
+        p_in, p_out = self._get_skewness_price(
             input_token, output_token, res_in, res_out, p_in_initial, p_out_initial, lambda_val
         )
 
+        return res_in, res_out, p_in, p_out
+    
+    def _get_amount_out(
+        self,
+        input_token: Token,
+        output_token: Token,
+        input_amount: int,
+        res_out: int,
+        p_in: int, p_out: int,
+        k: int,
+        fee_percentage: int
+    ) -> tuple[int | None, int | None]:
         normalized_input_amount = self._to_norm(input_amount, input_token.decimals)
         normalized_reserve_out = self._to_norm(res_out, output_token.decimals)
-        k = pool_state["k"]
-        fee_percentage = pool_state["fee"]
         
         amount_in_after_fee = self.mul_div(normalized_input_amount, self.PRECISION, self.PRECISION + fee_percentage)
 
@@ -199,7 +206,7 @@ class BrownFiV2LiquidityModule(LiquidityModule):
             sqrt_right_term = sqrt_right_term_part1 * sqrt_right_term_part2
 
             total_under_sqrt = sqrt_left_term + sqrt_right_term
-            sqrt_result = math.isqrt(total_under_sqrt)
+            sqrt_result = int(math.sqrt(total_under_sqrt))
             
             numerator_sqrt_term = self.Q64 * sqrt_result
             if numerator_sqrt_term > numerator_main_term:
@@ -216,6 +223,8 @@ class BrownFiV2LiquidityModule(LiquidityModule):
         final_amt = self._to_raw(amount_out_normalized, output_token.decimals)
         # fee is in input amount
         fee = input_amount - amount_in_after_fee
+        if fee < 0:
+            fee = 0
 
         try:
             # reverification
@@ -224,6 +233,145 @@ class BrownFiV2LiquidityModule(LiquidityModule):
             pass
 
         return final_amt, fee
+
+    def get_amount_out(
+        self,
+        pool_state: Dict,
+        fixed_parameters: Dict,
+        input_token: Token,
+        output_token: Token,
+        input_amount: int
+    ) -> tuple[int | None, int | None]:
+        if input_amount <= 0:
+            return None, None
+
+        token0_address, token1_address = fixed_parameters["token0_address"], fixed_parameters["token1_address"]
+        reserve0, reserve1 = pool_state["reserve0"], pool_state["reserve1"]
+        price0, price1 = pool_state["price0"], pool_state["price1"]
+        lambda_val = pool_state["lambda"]
+        k = pool_state["k"]
+        fee_percentage = pool_state["fee"]
+        token0 = Token(token0_address, "T0", fixed_parameters["token0_decimals"], 0)
+        token1 = Token(token1_address, "T1", fixed_parameters["token1_decimals"], 0)
+
+        is_lp_action = 0
+        if input_token.address == fixed_parameters["lp_token_address"]:
+            is_lp_action = 2 # burn
+        elif output_token.address == fixed_parameters["lp_token_address"]:
+            is_lp_action = 1 # mint
+        
+        if is_lp_action == 0:
+            # normal swap
+            res_in, res_out, p_in, p_out = self._prepare_swap(
+                input_token, output_token,
+                token0_address,
+                reserve0, reserve1,
+                price0, price1,
+                lambda_val
+            )
+            output_amount, fee = self._get_amount_out(
+                input_token, output_token, input_amount,
+                res_out,
+                p_in, p_out,
+                k, fee_percentage
+            )
+        elif is_lp_action == 1:
+            # mint
+            # only load these params when needed
+            balance0, balance1 = pool_state["balance0"], pool_state["balance1"]
+            total_supply = pool_state["total_supply"]
+
+            if token0.address == input_token.address:
+                balance0 += input_amount//2
+                # balance out with 50:50 LPing ratio
+                res_in, res_out, p_in, p_out = self._prepare_swap(
+                    token0, token1,
+                    token0_address,
+                    reserve0, reserve1,
+                    price0, price1,
+                    lambda_val
+                )
+                nb, fee = self._get_amount_out(
+                    token0, token1, input_amount//2,
+                    res_out,
+                    p_in, p_out,
+                    k, fee_percentage
+                )
+                balance1 += nb
+            elif token1.address == input_token.address:
+                balance1 += input_amount//2
+                # balance out with 50:50 LPing ratio
+                res_in, res_out, p_in, p_out = self._prepare_swap(
+                    token1, token0,
+                    token0_address,
+                    reserve0, reserve1,
+                    price0, price1,
+                    lambda_val
+                )
+                nb, fee = self._get_amount_out(
+                    token1, token0, input_amount//2,
+                    res_out,
+                    p_in, p_out,
+                    k, fee_percentage
+                )
+                balance0 += nb
+
+            output_amount = self._mint(
+                reserve0, reserve1,
+                balance0, balance1,
+                price0, price1,
+                token0, token1,
+                total_supply
+            )
+            # We have fee when doing 50:50 LPing ratio
+            # because of swap
+            # fee = None
+        elif is_lp_action == 2:
+            # burn
+            # only load these params when needed
+            balance0, balance1 = pool_state["balance0"], pool_state["balance1"]
+            total_supply = pool_state["total_supply"]
+            
+            output0, output1, new_reserve0, new_reserve1 = self._burn(
+                balance0, balance1,
+                input_amount,
+                total_supply
+            )
+
+            # swap into one asset: output_token
+            if output_token is token0:
+                res_out = new_reserve0
+                output_amount = output0
+
+                input_token = token1
+                input_amount = output1
+            elif output_token is token1:
+                res_out = new_reserve1
+                output_amount = output1
+
+                input_token = token0
+                input_amount = output0
+
+            # there's a swap fee when you burn with this function
+            # because you earn 2 tokens. But, now you have to get
+            # output_token only, instead.
+            res_in, res_out, p_in, p_out = self._prepare_swap(
+                input_token, output_token,
+                token0_address,
+                reserve0, reserve1,
+                price0, price1,
+                lambda_val
+            )
+            another_output, fee = self._get_amount_out(
+                input_token, output_token, input_amount,
+                res_out,
+                p_in, p_out,
+                k, fee_percentage
+            )
+
+            output_amount += another_output
+        
+        return output_amount, fee
 
     def get_amount_in(
         self,
