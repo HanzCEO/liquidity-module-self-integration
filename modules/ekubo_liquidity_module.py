@@ -37,10 +37,10 @@ class EkuboLiquidityModule(LiquidityModule):
     ) -> int:
         tvl = 0
 
-        for token in pool_tokens:
-            token_balance_key = token.address.lower() + '_balance'
-            tvl_token = pool_state[token_balance_key]
-            tvl_token *= token.reference_price
+        for address, token in pool_tokens.items():
+            token_balance_key = address.lower() + '_balance'
+            tvl_token = int(pool_state[token_balance_key])
+            tvl_token *= int(token.reference_price)
             tvl_token //= 10 ** token.decimals
             tvl += tvl_token
         
