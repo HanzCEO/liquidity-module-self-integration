@@ -1,4 +1,7 @@
 class SqrtRatio(int):
+	MIN_SQRT_RATIO_RAW = 4611797791050542631
+	MAX_SQRT_RATIO_RAW = 79227682466138141934206691491
+
 	BIT_MASK = 0xc00000000000000000000000
 	MAX_FIXED_VALUE_ROUND_UP = 0x1000000000000000000000000000000000000000000000000 - 0x4000000000000000000000000
 	TWO_POW_95 = 0x800000000000000000000000
@@ -35,3 +38,8 @@ class SqrtRatio(int):
 					raise ValueError("types/sqrtRatio.sol: ValueOverflowsSqrtRatioContainer")
 		
 		return r
+	
+	def is_valid(self) -> bool:
+		left = self & ~self.BIT_MASK > self.TWO_POW_62_MINUS_ONE
+		right = ((self < self.MIN_SQRT_RATIO_RAW) == 0) & ((self > self.MAX_SQRT_RATIO_RAW) == 0)
+		return left & right
