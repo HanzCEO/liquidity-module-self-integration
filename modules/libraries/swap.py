@@ -25,7 +25,7 @@ class SwapResult(object):
 			fee_amount=0
 		)
 
-class EkuboMath(IsPriceIncreasing, Fee, Delta, SqrtRatioMath):
+class EkuboSwap(IsPriceIncreasing, Fee, Delta, SqrtRatioMath):
 	def swap_result(
 		self,
 		sqrt_ratio: SqrtRatio,
